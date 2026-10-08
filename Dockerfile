@@ -71,10 +71,11 @@ RUN npm run build
 # 있다. 이 락은 이 작업 시점에 stable-alpine이 가리키던 것과 동일한 이미지다
 # (다이제스트 sha256:97d490c12ba55b4946b01546d1c3ed324e8d41ab1c9fcb2a616aa470620e5b46로
 # 확인) — 버전을 바꾸지 않고 태그만 고정했다.
-FROM nginx:1.30.4-alpine
+FROM nginx:1.30.4-alpine AS runtime
 
 COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.prod.conf /etc/nginx/conf.d/default.conf
+COPY nginx.prod.conf /etc/nginx/templates/default.conf.template
+ENV BACKTEST_API_UPSTREAM=backtest-be:8000
 
 # When the container starts, Nginx will serve the files from /usr/share/nginx/html
 EXPOSE 80

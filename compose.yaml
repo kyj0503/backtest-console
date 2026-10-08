@@ -1,0 +1,21 @@
+name: backtest-console-${APP_ENV:?}
+
+services:
+  app:
+    image: ${APP_IMAGE:?}
+    container_name: ${APP_CONTAINER:?}
+    restart: unless-stopped
+    environment:
+      BACKTEST_API_UPSTREAM: ${APP_BACKEND:?}
+    networks:
+      - backend-net
+    healthcheck:
+      test: [CMD, curl, -fsS, 'http://localhost/health']
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 6
+
+networks:
+  backend-net:
+    external: true
