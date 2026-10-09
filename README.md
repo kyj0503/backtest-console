@@ -36,6 +36,7 @@ shadcn으로 생성한 UI 컴포넌트는 저장소 소스에 포함되어 있�
 - OCI 컨테이너는 `backtest-fe` 하나입니다. 개발은 로컬 `compose.dev.yaml`을 사용합니다.
 - 서버 배포 경로는 `/opt/backtest-console/production`입니다.
 - Compose는 외부 `backend-net`을 사용하고 호스트 포트를 공개하지 않습니다.
+- Compose는 Docker 로그를 파일당 10MB, 최대 3개로 보관합니다. 다음 배포의 컨테이너 재생성부터 적용됩니다.
 - OCI의 `BACKTEST_API_UPSTREAM`은 `backtest-be:8000`입니다. 브라우저에는 같은 Origin의 API 경로만 사용합니다.
 - GitHub의 production Environment에 `OCI_SSH_KEY` Secret과 `OCI_HOST`, `OCI_USER`, `OCI_KNOWN_HOSTS`, `TS_CLIENT_ID`, `TS_AUDIENCE` Variables가 필요합니다.
 - 자동 GITHUB_TOKEN으로 GHCR를 사용하고 Tailscale OIDC로 github-oci의 SSH에 연결합니다.
