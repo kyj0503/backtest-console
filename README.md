@@ -31,13 +31,13 @@ shadcn으로 생성한 UI 컴포넌트는 저장소 소스에 포함되어 있�
 ## GitHub Actions 배포
 
 - PR(main/dev): Docker 테스트, 의존성 감사, 런타임 빌드.
-- main -> production, dev -> development.
+- main push/수동 실행: 검증 후 production에 배포합니다. dev는 CI 검증만 수행합니다.
 - GHCR ARM64 이미지 `ghcr.io/kyj0503/backtest-console`를 불변 digest로 배포합니다.
-- OCI 컨테이너는 운영 `backtest-fe`, 개발 `backtest-fe-dev`입니다.
-- 서버 배포 경로는 `/opt/backtest-console/{production,development}`입니다.
+- OCI 컨테이너는 `backtest-fe` 하나입니다. 개발은 로컬 `compose.dev.yaml`을 사용합니다.
+- 서버 배포 경로는 `/opt/backtest-console/production`입니다.
 - Compose는 외부 `backend-net`을 사용하고 호스트 포트를 공개하지 않습니다.
-- `BACKTEST_API_UPSTREAM`은 운영 `backtest-be:8000`, 개발 `backtest-be-dev:8000`입니다. 브라우저에는 같은 Origin의 API 경로만 사용합니다.
-- GitHub Environment마다 `OCI_SSH_KEY` Secret과 `OCI_HOST`, `OCI_USER`, `OCI_KNOWN_HOSTS`, `TS_CLIENT_ID`, `TS_AUDIENCE` Variables가 필요합니다.
+- OCI의 `BACKTEST_API_UPSTREAM`은 `backtest-be:8000`입니다. 브라우저에는 같은 Origin의 API 경로만 사용합니다.
+- GitHub의 production Environment에 `OCI_SSH_KEY` Secret과 `OCI_HOST`, `OCI_USER`, `OCI_KNOWN_HOSTS`, `TS_CLIENT_ID`, `TS_AUDIENCE` Variables가 필요합니다.
 - 자동 GITHUB_TOKEN으로 GHCR를 사용하고 Tailscale OIDC로 github-oci의 SSH에 연결합니다.
 - 프론트엔드는 현재 비밀 런타임 환경변수가 필요하지 않습니다. VITE_* 값은 공개 번들에 포함되므로 비밀값을 넣지 않습니다.
 - 실패 시 이전 릴리스를 복원합니다. 공통 Nginx는 `/opt/gateway`에서 별도로 관리합니다.
