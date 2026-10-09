@@ -12,8 +12,8 @@
 
 - Verify in Docker before declaring work complete: `docker build --target test .`, `sh scripts/audit-deps.sh`, and `docker build --target runtime .`.
 - The test target runs ESLint, production and test TypeScript checks, and Vitest. All 344 tests passed before the repository split (2026-10-09).
-- GitHub Actions validates PRs, publishes an ARM64 image on main/dev, and deploys its immutable digest through Tailscale and pinned OpenSSH.
-- main uses production; dev uses development. Each environment has its own deployment SSH key and OIDC identity.
+- GitHub Actions validates PRs and main/dev pushes. Only main publishes an ARM64 image and deploys its immutable digest through Tailscale and pinned OpenSSH.
+- production is the only OCI environment, with its deployment SSH key and OIDC identity. dev runs CI only; local development uses Compose.
 - Compose and deployment scripts live here; shared gateway files live outside the application repositories. Runtime secrets never belong in Git.
 - Playwright E2E requires a running frontend and backend; it is not part of a Docker image build.
 
