@@ -8,7 +8,7 @@ export const useRenderPerformance = (componentName: string) => {
   const renderCount = useRef<number>(0);
 
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.MODE === 'development') {
       renderCount.current += 1;
       const renderEndTime = performance.now();
       const renderDuration = renderEndTime - (renderStartTime.current || renderEndTime);
@@ -33,7 +33,7 @@ export const useRenderPerformance = (componentName: string) => {
   });
 
   // 렌더링 시작 마크
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.MODE === 'development') {
     renderStartTime.current = performance.now();
     performance.mark(`${componentName}-render-start`);
   }

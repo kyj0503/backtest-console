@@ -3,9 +3,11 @@
 # P3-05: node:20.19.0-alpine은 Node 20.19.0 고정 태그로 이미 EOL(2026-04-30)이
 # 지났다. package.json의 engines.node(">=20.0.0")는 22에도 그대로 만족되므로
 # package.json은 건드리지 않았다.
-FROM node:22-alpine AS deps
+FROM node:24-alpine AS deps
 
 WORKDIR /app
+
+RUN npm install --global npm@12.2.1
 
 # Copy only package manifests first to leverage Docker layer caching
 COPY package*.json ./
@@ -71,7 +73,7 @@ RUN npm run build
 # 있다. 이 락은 이 작업 시점에 stable-alpine이 가리키던 것과 동일한 이미지다
 # (다이제스트 sha256:97d490c12ba55b4946b01546d1c3ed324e8d41ab1c9fcb2a616aa470620e5b46로
 # 확인) — 버전을 바꾸지 않고 태그만 고정했다.
-FROM nginx:1.30.4-alpine AS runtime
+FROM nginx:1.30.6-alpine AS runtime
 
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.prod.conf /etc/nginx/templates/default.conf.template
