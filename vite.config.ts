@@ -45,15 +45,11 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // React 관련 라이브러리 분리
-          // React 19에서는 진입점이 react-dom/client 이므로 명시하지 않으면
-          // react-dom 본체가 vendor 청크에 잡히지 않고 index로 흘러들어간다.
-          'react-vendor': ['react', 'react-dom', 'react-dom/client', 'react-router-dom'],
-          // 아이콘 라이브러리 분리
-          'icon-vendor': ['lucide-react'],
-          // 유틸리티 라이브러리 분리
-          'util-vendor': ['axios']
+        manualChunks(id) {
+          if (/\/node_modules\/(?:react|react-dom|react-router|react-router-dom)\//.test(id)) return 'react-vendor'
+          if (id.includes('/node_modules/lucide-react/')) return 'icon-vendor'
+          if (id.includes('/node_modules/axios/')) return 'util-vendor'
+          return undefined
           // P3-23: 'chart-vendor': ['recharts']를 의도적으로 제거했다 (실측:
           // b5-F-report.md). recharts는 lazy(() => import(...))로 감싼 차트
           // 컴포넌트에서만 쓰이는데도(App.tsx의 HomePage/PortfolioPage 라우트

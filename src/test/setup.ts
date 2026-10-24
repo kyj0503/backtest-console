@@ -1,18 +1,14 @@
-import '@testing-library/jest-dom'
-import { expect, afterEach, beforeAll, afterAll, vi } from 'vitest'
+import '@testing-library/jest-dom/vitest'
+import { afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
-import * as matchers from '@testing-library/jest-dom/matchers'
 import { server } from './mocks/server'
 
-// Testing Library 매처 확장
-expect.extend(matchers)
-
 // MSW 서버 설정
-// onUnhandledRequest: 'error' (P3-03) — 모킹되지 않은 요청은 경고로 흘려보내지
+// onUnhandledFrame: 'error' (P3-03) — 모킹되지 않은 요청은 경고로 흘려보내지
 // 않고 테스트를 실패시킨다. 'warn'이었을 때는 핸들러 누락이 콘솔 경고로만
 // 남고 테스트는 그대로 초록불이라, 실제로는 아무 응답도 받지 못한 컴포넌트가
 // 우연히(로딩/에러 상태 등으로) 단언을 통과하는 경우를 놓칠 수 있었다.
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+beforeAll(() => server.listen({ onUnhandledFrame: 'error' }))
 afterEach(() => {
   cleanup()
   server.resetHandlers()
