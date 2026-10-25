@@ -51,9 +51,9 @@ Docker 테스트는 네 자료 중 하나가 느리거나 실패한 경우, 병�
 ## 계산 전 사람 인증
 
 운영 화면은 Cloudflare Turnstile 인증을 완료해야 계산 버튼이 활성화된다.
-Managed 위젯의 `appearance: interaction-only`를 사용해 직접 확인이 필요할 때만
-인증창을 표시한다. 평소에는 실행 버튼 옆에 작은 인증 상태만 표시하며, 인증창은
-최대 300px로 제한한다. 모바일에서는 실행 버튼 위에 배치한다.
+Cloudflare 기본 Managed 위젯을 실행 버튼 옆에 최대 300px로 표시한다.
+로고와 인증 상태는 기본 위젯이 표시하며 별도의 완료 문구는 덧붙이지 않는다.
+모바일에서는 실행 버튼 위에 배치한다.
 공개 sitekey는 GitHub Actions Variable `VITE_TURNSTILE_SITE_KEY` → Docker 빌드 인자
 → Vite 번들로 전달한다. 비밀키는 프론트엔드·GitHub에 넣지 않는다.
 
