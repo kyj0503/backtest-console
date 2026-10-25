@@ -5,6 +5,8 @@ import type { IndicatorData } from './api-types';
 export interface Stock {
   symbol: string;
   weight: number;
+  amount?: number;
+  asset_type?: 'stock' | 'cash';
 }
 
 // BE individual_returns 항목. return은 이미 백분율(8 = 8%), weight는 0~1 비율이다.
@@ -108,6 +110,8 @@ export interface PortfolioStatistics {
   Trade_Win_Rate?: number | null;
   /** 일간 수익 합 / 일간 손실 합. 손실일이 없으면 계산 불가라 null */
   Profit_Factor: number | null;
+  sp500_total_return_pct?: number;
+  alpha_vs_sp500_pct?: number;
 }
 
 export interface ChartData {
@@ -224,7 +228,7 @@ export interface PortfolioData {
   // 전략 상세 정보 (개별 종목의 거래 내역 포함)
   strategy_details?: Record<string, StrategyStats>;
 
-  // 통합 응답 데이터 (별도 API 호출 불필요)
+  // Reference data is loaded independently after the simulation completes.
   ticker_info?: Record<string, TickerInfo>;
   stock_data?: Record<string, Array<{ date: string; price: number; volume: number }>>;
   exchange_rates?: ExchangeRatePoint[];

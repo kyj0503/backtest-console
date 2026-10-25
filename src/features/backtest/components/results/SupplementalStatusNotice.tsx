@@ -54,7 +54,7 @@ const SupplementalStatusNotice: React.FC<SupplementalStatusNoticeProps> = ({ sta
       <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
       <p>
         일부 부가 데이터를 불러오지 못했습니다: {failed.join(', ')}. 해당 섹션이 비어 있다면
-        데이터가 없어서가 아니라 수집에 실패했기 때문이며, 다시 실행하면 표시될 수 있습니다.
+        데이터가 없어서가 아니라 수집에 실패했기 때문입니다. 참고 데이터만 다시 불러올 수 있습니다.
         백테스트 결과 자체에는 영향이 없습니다.
       </p>
     </div>

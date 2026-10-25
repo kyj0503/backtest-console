@@ -16,6 +16,9 @@ localhost:5173에서 접속합니다. Docker의 Vite 프록시는 호스트의 �
 네이티브 실행은 `.env.example`을 참고하여 `npm ci`, `npm run dev`를 사용합니다.
 `VITE_API_BASE_URL`은 비워 두어야 합니다. API 호출에 이미 `/api/v1/...` 전체 경로가 들어갑니다.
 
+계산 결과를 먼저 표시하고 차트·뉴스 등 참고 데이터는 별도로 조회합니다.
+참고 자료의 조회·재시도·취소 흐름은 [API 데이터 흐름](docs/api-data-flow.md)을 참고합니다.
+
 ## 검증
 
 ```bash
