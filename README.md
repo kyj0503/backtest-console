@@ -15,6 +15,8 @@ docker compose -f compose.dev.yaml up -d --build
 localhost:5173에서 접속합니다. Docker의 Vite 프록시는 호스트의 백엔드 :8000을 사용합니다.
 네이티브 실행은 `.env.example`을 참고하여 `npm ci`, `npm run dev`를 사용합니다.
 `VITE_API_BASE_URL`은 비워 두어야 합니다. API 호출에 이미 `/api/v1/...` 전체 경로가 들어갑니다.
+운영 빌드는 공개 `VITE_TURNSTILE_SITE_KEY`가 필요합니다. 계산 전에 사람 인증을 수행하고,
+백엔드가 검증합니다. 위젯 비밀키는 백엔드 런타임 `.env`에서만 관리합니다.
 
 계산 결과를 먼저 표시하고 주가·환율·벤치마크·뉴스는 네 API로 각각 조회·재시도합니다.
 참고 자료의 조회·재시도·취소 흐름은 [API 데이터 흐름](docs/api-data-flow.md)을 참고합니다.

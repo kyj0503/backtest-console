@@ -25,6 +25,39 @@ function deferred() {
 }
 
 describe('independent market-data lifecycles', () => {
+  it('forwards human verification only to calculation; read retries need no token', async () => {
+    const seen: (string | null)[] = [];
+    server.use(
+      http.post(`${origin}/api/v1/backtest`, async ({ request: incoming }) => {
+        expect(incoming.headers.get('X-Turnstile-Token')).toBe('one-use-token');
+        expect(await incoming.json()).not.toHaveProperty('turnstileToken');
+        return HttpResponse.json(makePortfolioResponse());
+      }),
+      ...MARKET_SECTIONS.map(section => http.get(`${origin}/api/v1/${paths[section]}`, ({ request: incoming }) => {
+        seen.push(incoming.headers.get('X-Turnstile-Token'));
+        return success();
+      })),
+    );
+    const { result } = renderHook(() => useBacktest());
+    await act(async () => { await result.current.runBacktest(request, 'one-use-token'); });
+    await waitFor(() => expect(seen).toHaveLength(4));
+    await waitFor(() => expect(result.current.marketReads.news.phase).toBe('success'));
+    act(() => result.current.retryMarketData('news'));
+    await waitFor(() => expect(seen).toHaveLength(5));
+    expect(seen.every(value => value === null)).toBe(true);
+  });
+
+  it('shows a verification rejection without starting reference reads', async () => {
+    server.use(http.post(`${origin}/api/v1/backtest`, () => HttpResponse.json(
+      { detail: '사람 인증이 필요합니다.' }, { status: 403 },
+    )));
+    const { result } = renderHook(() => useBacktest());
+    await act(async () => { await expect(result.current.runBacktest(request, 'expired')).rejects.toThrow(); });
+    expect(result.current.error).toBe('사람 인증이 필요합니다.');
+    expect(result.current.result).toBeNull();
+    expect(MARKET_SECTIONS.every(section => result.current.marketReads[section].phase === 'idle')).toBe(true);
+  });
+
   it('shows calculation and other feeds while news is pending; merges concurrent results', async () => {
     const release = deferred();
     let body: BacktestRequest | undefined;

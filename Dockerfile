@@ -62,6 +62,10 @@ RUN npm audit --audit-level=high --json > /tmp/audit.json 2>/dev/null || true; \
 # Stage 4: Build the React application
 FROM deps AS build
 
+# Public widget identifier only. The secret stays in the backend runtime .env.
+ARG VITE_TURNSTILE_SITE_KEY
+ENV VITE_TURNSTILE_SITE_KEY=${VITE_TURNSTILE_SITE_KEY}
+
 # Copy rest of sources
 COPY . .
 
