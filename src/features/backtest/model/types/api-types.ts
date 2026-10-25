@@ -1,5 +1,5 @@
 // API 타입 정의 - 통합 및 확장
-import { NewsItem } from './backtest-result-types';
+import type { NewsItem, PortfolioData } from './backtest-result-types';
 
 export type { NewsItem };
 
@@ -49,6 +49,11 @@ export interface BacktestRequest {
   strategy_params?: Record<string, StrategyParamValue>;
   commission?: number;
   rebalance_frequency?: string;
+  include_stock_data?: boolean;
+  include_volatility_events?: boolean;
+  include_exchange_rates?: boolean;
+  include_benchmarks?: boolean;
+  include_news?: boolean;
 }
 
 // 백테스트 결과 통계
@@ -158,23 +163,12 @@ export interface ChartDataResponse {
 }
 
 // 포트폴리오 백테스트 응답
-export interface PortfolioBacktestResponse {
-  portfolio_composition: Array<{
-    symbol: string;
-    weight: number;
-    amount: number;
-    asset_type: string;
-  }>;
-  chart_data: PortfolioChartDataPoint[];
-  stats: PortfolioStats;
-  start_date: string;
-  end_date: string;
-  strategy: string;
-  sp500_benchmark?: Array<{ date: string; close: number; volume: number }>;
-  nasdaq_benchmark?: Array<{ date: string; close: number; volume: number }>;
-  // 제외 종목·실패 종목 등 사용자 안내 (정상 응답은 빈 배열)
-  warnings?: string[];
-}
+export type PortfolioBacktestResponse = PortfolioData;
+
+export type MarketData = Pick<PortfolioData,
+  'ticker_info' | 'stock_data' | 'exchange_rates' | 'exchange_stats' |
+  'volatility_events' | 'latest_news' | 'sp500_benchmark' | 'nasdaq_benchmark' |
+  'supplemental_status'> & { sp500_total_return_pct?: number | null };
 
 // 전략 관련 타입
 export interface Strategy {
