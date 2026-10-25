@@ -38,7 +38,7 @@ describe('generateTextReport — 포트폴리오', () => {
 
   it('기간·자산가치·수익률·낙폭 등 주요 지표를 담는다', () => {
     expect(report).toContain(`백테스트 기간       : ${RESULT_DATES[0]} ~ ${RESULT_DATES[7]}`)
-    expect(report).toContain('초기 자본금         : $10,000')
+    expect(report).toContain('총 납입금         : $10,000')
     expect(report).toContain('최종 자산가치       : $10,700')
     expect(report).toContain('총 수익률           : 7.00%')
     expect(report).toContain('최대 낙폭(MDD)      : -3.20%')
@@ -48,7 +48,7 @@ describe('generateTextReport — 포트폴리오', () => {
   it('개별 종목 수익률은 BE가 준 백분율을 그대로, 비중은 비율을 퍼센트로 보여 준다', () => {
     expect(report).toContain('■ 개별 종목 수익률')
     expect(report).toMatch(/AAPL\s+- 수익률: 8\.00%\s+\|\s+비중: 60\.00%/)
-    expect(report).toMatch(/시작가: \$125\.00\s+\|\s+종료가: \$135\.00/)
+    expect(report).toMatch(/평균 매수가\(USD\): \$125\.00\s+\|\s+종료가\(USD\): \$135\.00/)
   })
 
   it('환율 데이터가 없으면 환율 섹션을 넣지 않는다', () => {
@@ -82,6 +82,23 @@ describe('generateTextReport — 포트폴리오', () => {
     expect(text).toContain('리포트 끝')
   })
 })
+
+describe('실제 USD 체결 결과 리포트', () => {
+  it('환산된 가격·실제 납입액·최종 평가액과 지표 정의를 함께 표시한다', () => {
+    const data = makePortfolioData({
+      individual_returns: {
+        KRWX: { weight: 1, return: -50, amount: 1000, final_value: 500, start_price: 100, end_price: 50 },
+      },
+    });
+    const text = generateTextReport(data, true);
+    expect(text).toContain('평균 매수가(USD): $100.00');
+    expect(text).toContain('종료가(USD): $50.00');
+    expect(text).toContain('투자금: $1000.00  |  최종 가치: $500.00');
+    expect(text).toContain('수수료·환율 반영');
+    expect(text).toContain('무위험 수익률 0%');
+    expect(generateCSVReport(data, true)).toContain('평균 매수가(USD),종료가(USD)');
+  });
+});
 
 describe('generateTextReport — 단일 종목', () => {
   it('기본 정보·지표·거래 내역을 담는다', () => {
@@ -162,7 +179,7 @@ describe('generateCSVReport — 포트폴리오', () => {
     expect(csv).toContain(`백테스트 시작일,${RESULT_DATES[0]}`)
     expect(csv).toContain('총 수익률,7.00%')
     expect(csv).toContain('최대 낙폭(MDD),-3.20%')
-    expect(csv).toContain('종목,수익률(%),비중(%),시작가($),종료가($)')
+    expect(csv).toContain('종목,수익률(%),비중(%),평균 매수가(USD),종료가(USD)')
     expect(csv).toContain('AAPL,8.00,60.00,125.00,135.00')
   })
 

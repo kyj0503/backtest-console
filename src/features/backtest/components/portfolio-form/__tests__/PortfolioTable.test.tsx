@@ -93,7 +93,7 @@ describe('PortfolioTable — 금액 모드', () => {
     const dcaWeight = ((1000 * periods) / total * 100).toFixed(1)
     expect(within(bodyRows()[0]!).getByText(`${dcaWeight}%`)).toBeInTheDocument()
     expect(
-      within(bodyRows()[0]!).getByText(new RegExp(`총 ${periods}회, 회당 \\$1,000`))
+      within(bodyRows()[0]!).getByText(new RegExp(`예정 ${periods}회, 회당 \\$1,000`))
     ).toBeInTheDocument()
   })
 
