@@ -116,7 +116,7 @@ export function useBacktest() {
     }
   }, []);
 
-  const runBacktest = useCallback(async (request: BacktestRequest) => {
+  const runBacktest = useCallback(async (request: BacktestRequest, turnstileToken?: string) => {
     abortCurrent();
     const controller = new AbortController();
     activeControllerRef.current = controller;
@@ -128,7 +128,7 @@ export function useBacktest() {
       const data = await BacktestService.executeBacktest({
         ...request, include_stock_data: false, include_volatility_events: false,
         include_exchange_rates: false, include_benchmarks: false, include_news: false,
-      }, controller.signal);
+      }, controller.signal, turnstileToken);
       if (activeControllerRef.current === controller) {
         setResult(data);
         if ('portfolio_statistics' in data.data && Array.isArray(data.data.portfolio_composition)) {

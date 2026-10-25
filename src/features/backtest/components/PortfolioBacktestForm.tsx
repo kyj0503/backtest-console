@@ -9,6 +9,7 @@ import CommissionForm from './CommissionForm';
 import PortfolioForm from './PortfolioForm';
 import { useBacktestForm } from '../hooks/useBacktestForm';
 import { useFormValidation } from '../hooks/useFormValidation';
+import { TurnstileVerification } from './TurnstileVerification';
 import { Button } from '@/shared/ui/button';
 import { FormSection } from '@/shared/components';
 import {
@@ -20,7 +21,7 @@ import {
 } from '@/shared/ui/dialog';
 
 interface PortfolioBacktestFormProps {
-  onSubmit: (request: BacktestRequest) => Promise<unknown>;
+  onSubmit: (request: BacktestRequest, turnstileToken?: string) => Promise<unknown>;
   loading?: boolean;
 }
 
@@ -28,6 +29,10 @@ const PortfolioBacktestForm: React.FC<PortfolioBacktestFormProps> = ({ onSubmit,
   const { state, actions } = useBacktestForm();
   const { errors, validateForm } = useFormValidation();
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [verificationAttempt, setVerificationAttempt] = useState(0);
+  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '';
+  const verificationRequired = import.meta.env.PROD || !!siteKey;
 
   const generateStrategyParams = () => {
     const strategyParams = state.strategy.strategyParams;
@@ -36,6 +41,7 @@ const PortfolioBacktestForm: React.FC<PortfolioBacktestFormProps> = ({ onSubmit,
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || state.ui.isLoading || (verificationRequired && !turnstileToken)) return;
     actions.setLoading(true);
 
     const isFormValid = validateForm(state);
@@ -70,7 +76,7 @@ const PortfolioBacktestForm: React.FC<PortfolioBacktestFormProps> = ({ onSubmit,
         rebalance_frequency: resolveRebalanceFrequency(
           state.settings.rebalanceFrequency, strategy, state.portfolio.length
         )
-      });
+      }, turnstileToken || undefined);
     } catch (error) {
       // 백엔드/네트워크 에러는 usePortfolioBacktest 훅이 extractErrorMessage로
       // 실제 메시지를 추출해 페이지 레벨 Alert에 표시한다. 이 모달은 위쪽의
@@ -80,6 +86,9 @@ const PortfolioBacktestForm: React.FC<PortfolioBacktestFormProps> = ({ onSubmit,
       // 닫아도 쓸모없는 Alert만 남는 문제가 있었다 (P2-29).
       console.error('백테스트 실행 중 오류:', extractErrorMessage(error));
     } finally {
+      // Siteverify tokens are single-use, including a rejected/failed attempt.
+      setTurnstileToken('');
+      setVerificationAttempt(value => value + 1);
       actions.setLoading(false);
     }
   };
@@ -178,11 +187,14 @@ const PortfolioBacktestForm: React.FC<PortfolioBacktestFormProps> = ({ onSubmit,
           </FormSection>
         </div>
 
+        {verificationRequired && <TurnstileVerification siteKey={siteKey}
+          resetKey={verificationAttempt} onToken={setTurnstileToken} />}
+
         {/* 제출 버튼 */}
         <div className="flex justify-end pt-2 sm:pt-4 pb-6 sm:pb-8">
           <Button
             type="submit"
-            disabled={loading || state.ui.isLoading}
+            disabled={loading || state.ui.isLoading || (verificationRequired && !turnstileToken)}
             size="lg"
             className="w-full sm:w-auto sm:min-w-[240px] shadow-md hover:shadow-xl"
           >

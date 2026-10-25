@@ -49,11 +49,21 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Require production Turnstile sitekey
+        env:
+          TURNSTILE_SITEKEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
+        run: |
+          test -n "$TURNSTILE_SITEKEY"
+          case "$TURNSTILE_SITEKEY" in
+            [123]x000000*) echo 'Production must not use a dummy sitekey'; exit 1 ;;
+          esac
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         id: build
         with:
           context: .
           target: runtime
+          build-args: |
+            VITE_TURNSTILE_SITE_KEY=${{ vars.VITE_TURNSTILE_SITE_KEY }}
           platforms: linux/arm64
           push: true
           tags: |
