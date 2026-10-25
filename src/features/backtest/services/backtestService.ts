@@ -17,8 +17,10 @@ export class BacktestService {
   /**
    * 백테스트 실행 (단일 종목 또는 포트폴리오)
    */
-  static async executeBacktest(request: BacktestRequest, signal?: AbortSignal): Promise<UnifiedBacktestResponse> {
-    const response = await apiClient.post<UnifiedBacktestResponse>('/api/v1/backtest', request, { signal });
+  static async executeBacktest(request: BacktestRequest, signal?: AbortSignal, turnstileToken?: string): Promise<UnifiedBacktestResponse> {
+    const response = await apiClient.post<UnifiedBacktestResponse>('/api/v1/backtest', request, {
+      signal, headers: turnstileToken ? { 'X-Turnstile-Token': turnstileToken } : undefined,
+    });
     return response.data;
   }
 
