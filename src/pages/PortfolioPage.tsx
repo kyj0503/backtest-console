@@ -8,7 +8,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Button } from '@/shared/ui/button';
 
 const PortfolioPage: React.FC = () => {
-  const { result: results, isLoading: loading, error, runBacktest, clearError } = useBacktest();
+  const {
+    result: results, isLoading: loading, error, runBacktest, clearError,
+    isSupplementalLoading, supplementalError, retrySupplemental,
+  } = useBacktest();
 
   return (
     <div className="min-h-screen bg-background py-4 sm:py-8">
@@ -60,6 +63,18 @@ const PortfolioPage: React.FC = () => {
         )}
 
         {/* Results Display */}
+        {results && !loading && (
+          <div role="status" aria-label="참고 데이터 조회 상태" className="mb-4 text-sm text-muted-foreground">
+            {isSupplementalLoading && <p>계산이 완료됐습니다. 차트·뉴스 등 참고 데이터를 불러오고 있습니다.</p>}
+            {supplementalError && <p>참고 데이터를 불러오지 못했습니다. 계산 결과는 유지됩니다. {supplementalError}</p>}
+            {!isSupplementalLoading && (supplementalError || (
+              'supplemental_status' in results.data && Object.values(results.data.supplemental_status ?? {})
+                .some(status => status === 'error' || status === 'timeout')
+            )) && (
+              <Button variant="outline" onClick={retrySupplemental} className="mt-2">참고 데이터 다시 불러오기</Button>
+            )}
+          </div>
+        )}
         {results && !loading && (
           <BacktestResults
             data={results.data}

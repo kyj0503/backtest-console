@@ -66,29 +66,6 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 });
 
 /**
- * 진행 중인 백테스트 요청의 취소 브리지.
- *
- * BacktestService.executeBacktest(request)는 매개변수가 request 하나뿐인
- * 고정 시그니처라, 호출부(usePortfolioBacktest)가 AbortSignal을 직접 넘길
- * 방법이 없다. 대신 훅이 "지금 진행 중인 요청"의 signal을 여기 등록해두면,
- * 다음에 나가는 요청에 인터셉터가 자동으로 실어준다. 언마운트되거나 새
- * 제출이 이전 요청을 대체(supersede)할 때 훅이 컨트롤러의 abort()를
- * 호출해 실제로 취소한다 (P2-30).
- */
-let activeRequestSignal: AbortSignal | undefined;
-
-export const setActiveRequestSignal = (signal: AbortSignal | undefined): void => {
-  activeRequestSignal = signal;
-};
-
-apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  if (activeRequestSignal && !config.signal) {
-    config.signal = activeRequestSignal;
-  }
-  return config;
-});
-
-/**
  * axios 에러(또는 임의의 값)에서 사용자에게 보여줄 메시지를 추출한다.
  *
  * FastAPI는 에러를 `detail` 필드로 응답한다 (`message` / `error` 키가 아님):
