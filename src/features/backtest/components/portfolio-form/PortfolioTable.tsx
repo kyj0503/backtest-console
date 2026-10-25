@@ -233,7 +233,7 @@ export const PortfolioTable: React.FC<PortfolioTableProps> = ({
                       aria-label={`${index + 1}번째 종목 비중`}
                     />
                   ) : (
-                    <span title="DCA를 포함한 총 투자금액 비율로 자동 계산됨. 비중을 직접 입력하려면 비중 기반 모드로 전환하세요.">
+                    <span title="DCA 예정 납입액을 포함한 투자금액 비율로 자동 계산됨. 비중을 직접 입력하려면 비중 기반 모드로 전환하세요.">
                       {calculateWeight(stock)}%
                     </span>
                   )}

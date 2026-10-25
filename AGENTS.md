@@ -11,7 +11,7 @@
 ## Validation and deployment
 
 - Verify in Docker before declaring work complete: `docker build --target test .`, `sh scripts/audit-deps.sh`, and `docker build --target runtime .`.
-- The test target runs ESLint, production and test TypeScript checks, and Vitest. Current baseline: 356 tests passed (2026-10-25).
+- The test target runs ESLint, production and test TypeScript checks, and Vitest. Current baseline: 367 tests passed (2026-10-25).
 - GitHub Actions validates PRs and main/dev pushes. Only main publishes an ARM64 image and deploys its immutable digest through Tailscale and pinned OpenSSH.
 - production is the only OCI environment, with its deployment SSH key and OIDC identity. dev runs CI only; local development uses Compose.
 - Compose and deployment scripts live here; shared gateway files live outside the application repositories. Runtime secrets never belong in Git.

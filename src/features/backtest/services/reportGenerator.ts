@@ -73,7 +73,7 @@ export const generateTextReport = (data: BacktestResultData, isPortfolio: boolea
     lines.push('-'.repeat(80));
     lines.push(`  백테스트 기간       : ${stats.Start} ~ ${stats.End}`);
     lines.push(`  운용 기간           : ${stats.Duration}`);
-    lines.push(`  초기 자본금         : $${stats.Initial_Value.toLocaleString()}`);
+    lines.push(`  총 납입금         : $${stats.Initial_Value.toLocaleString()}`);
     lines.push(`  최종 자산가치       : $${stats.Final_Value.toLocaleString()}`);
     lines.push(`  최고 자산가치       : $${stats.Peak_Value.toLocaleString()}`);
     lines.push('');
@@ -82,6 +82,7 @@ export const generateTextReport = (data: BacktestResultData, isPortfolio: boolea
     lines.push(`  연간 변동성         : ${stats.Annual_Volatility.toFixed(2)}%`);
     lines.push('');
     lines.push(`  샤프 비율           : ${stats.Sharpe_Ratio.toFixed(2)}`);
+    lines.push('  산식: 일간 시간가중 수익률의 평균 / 표준편차 × √252 (무위험 수익률 0%)');
     lines.push(`  최대 낙폭(MDD)      : ${stats.Max_Drawdown.toFixed(2)}%`);
     lines.push(`  평균 낙폭           : ${stats.Avg_Drawdown.toFixed(2)}%`);
     lines.push('');
@@ -99,15 +100,17 @@ export const generateTextReport = (data: BacktestResultData, isPortfolio: boolea
 
     if ('individual_returns' in data && data.individual_returns) {
       lines.push('■ 개별 종목 수익률');
+      lines.push('  USD 기준 · 수수료·환율 반영 · 리밸런싱 자금 이동은 손익에서 제외');
       lines.push('-'.repeat(80));
       Object.entries(data.individual_returns).forEach(([symbol, info]) => {
         // return은 BE가 이미 백분율로 준다. weight만 0~1 비율이라 100을 곱한다.
         lines.push(`  ${symbol.padEnd(10)} - 수익률: ${percentOrNA(info.return)}  |  비중: ${(info.weight * 100).toFixed(2)}%`);
         if (info.start_price !== undefined || info.end_price !== undefined) {
-          lines.push(`               시작가: ${dollarOrNA(info.start_price)}  |  종료가: ${dollarOrNA(info.end_price)}`);
-        } else if (info.initial_value !== undefined || info.final_value !== undefined) {
+          lines.push(`               평균 매수가(USD): ${dollarOrNA(info.start_price)}  |  종료가(USD): ${dollarOrNA(info.end_price)}`);
+        }
+        if (info.initial_value !== undefined || info.final_value !== undefined) {
           // 전략 포트폴리오 경로는 가격 대신 투자 금액과 최종 가치를 준다.
-          lines.push(`               투자금: ${dollarOrNA(info.initial_value)}  |  최종 가치: ${dollarOrNA(info.final_value)}`);
+          lines.push(`               투자금: ${dollarOrNA(info.initial_value ?? info.amount)}  |  최종 가치: ${dollarOrNA(info.final_value)}`);
         }
       });
       lines.push('');
@@ -219,7 +222,7 @@ export const generateCSVReport = (data: BacktestResultData, isPortfolio: boolean
     csvRows.push(`백테스트 시작일,${stats.Start}`);
     csvRows.push(`백테스트 종료일,${stats.End}`);
     csvRows.push(`운용 기간,${stats.Duration}`);
-    csvRows.push(`초기 자본금,$${stats.Initial_Value.toLocaleString()}`);
+    csvRows.push(`총 납입금,$${stats.Initial_Value.toLocaleString()}`);
     csvRows.push(`최종 자산가치,$${stats.Final_Value.toLocaleString()}`);
     csvRows.push(`최고 자산가치,$${stats.Peak_Value.toLocaleString()}`);
     csvRows.push(`총 수익률,${stats.Total_Return.toFixed(2)}%`);
@@ -242,7 +245,7 @@ export const generateCSVReport = (data: BacktestResultData, isPortfolio: boolean
 
     if ('individual_returns' in data && data.individual_returns) {
       csvRows.push('개별 종목 수익률');
-      csvRows.push('종목,수익률(%),비중(%),시작가($),종료가($)');
+      csvRows.push('종목,수익률(%),비중(%),평균 매수가(USD),종료가(USD)');
       Object.entries(data.individual_returns).forEach(([symbol, info]) => {
         csvRows.push(`${symbol},${fixedOrNA(info.return)},${(info.weight * 100).toFixed(2)},${fixedOrNA(info.start_price)},${fixedOrNA(info.end_price)}`);
       });

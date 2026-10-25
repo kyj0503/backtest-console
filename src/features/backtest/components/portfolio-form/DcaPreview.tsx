@@ -24,7 +24,7 @@ export const DcaPreview: React.FC<DcaPreviewProps> = ({ stock, startDate, endDat
 
   return (
     <p className={`${TEXT_STYLES.captionSmall} mt-1`}>
-      {frequencyLabel}: 총 {dcaPeriods}회, 회당 ${periodAmount.toLocaleString()} (총 ${totalAmount.toLocaleString()})
+      {frequencyLabel}: 예정 {dcaPeriods}회, 회당 ${periodAmount.toLocaleString()} (예정 총액 ${totalAmount.toLocaleString()})
     </p>
   );
 };
