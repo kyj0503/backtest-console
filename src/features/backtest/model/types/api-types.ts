@@ -165,10 +165,16 @@ export interface ChartDataResponse {
 // 포트폴리오 백테스트 응답
 export type PortfolioBacktestResponse = PortfolioData;
 
-export type MarketData = Pick<PortfolioData,
-  'ticker_info' | 'stock_data' | 'exchange_rates' | 'exchange_stats' |
-  'volatility_events' | 'latest_news' | 'sp500_benchmark' | 'nasdaq_benchmark' |
-  'supplemental_status'> & { sp500_total_return_pct?: number | null };
+export type MarketDataSection = 'prices' | 'exchangeRates' | 'benchmarks' | 'news';
+export interface MarketDataResponses {
+  prices: Pick<PortfolioData, 'ticker_info' | 'stock_data' | 'volatility_events' | 'supplemental_status'>;
+  exchangeRates: Pick<PortfolioData, 'exchange_rates' | 'exchange_stats' | 'supplemental_status'>;
+  benchmarks: Pick<PortfolioData, 'sp500_benchmark' | 'nasdaq_benchmark' | 'supplemental_status'> & {
+    sp500_total_return_pct?: number | null;
+  };
+  news: Pick<PortfolioData, 'latest_news' | 'supplemental_status'>;
+}
+export type MarketData = MarketDataResponses[MarketDataSection];
 
 // 전략 관련 타입
 export interface Strategy {

@@ -10,7 +10,7 @@
  * 결과 상단에 경고 배너, 빈 배열이면 배너 없음 — 을 네트워크 경로 그대로 고정한다.
  */
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse, delay } from 'msw'
 import { server } from '@/test/mocks/server'
@@ -197,6 +197,33 @@ describe('PortfolioPage 결과 흐름', () => {
     await user.click(screen.getByRole('button', { name: '닫기' }))
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(screen.getByText('나만의 투자 전략을 검증해보세요')).toBeInTheDocument()
+  })
+
+  it.each([
+    ['prices', '주가'], ['exchange-rates', '환율'], ['benchmarks', '벤치마크'], ['news', '뉴스'],
+  ])('%s 실패는 해당 카드에만 표시하고 버튼으로 그 조회만 재시도한다', async (path, label) => {
+    let calculations = 0
+    const reads: Record<string, number> = {}
+    const paths = ['prices', 'exchange-rates', 'benchmarks', 'news']
+    server.use(
+      http.post(ENDPOINT, () => { calculations++; return HttpResponse.json(makePortfolioResponse()) }),
+      ...paths.map(resource => http.get(`${TEST_BASE_URL}/api/v1/${resource}`, () => {
+        reads[resource] = (reads[resource] ?? 0) + 1
+        return resource === path && reads[resource] === 1
+          ? HttpResponse.json({ detail: '일시적 조회 실패' }, { status: 503 })
+          : HttpResponse.json({ status: 'success', data: {} })
+      })),
+    )
+    renderPage()
+    const user = await submit()
+    const card = await screen.findByRole('status', { name: `${label} 조회 상태` })
+    const retry = await within(card).findByRole('button', { name: `${label} 다시 불러오기` })
+    expect(card).toHaveTextContent('일시적 조회 실패')
+    expect(await screen.findByRole('heading', { name: '백테스트 성과' })).toBeInTheDocument()
+    await user.click(retry)
+    await waitFor(() => expect(card).toHaveTextContent('조회 완료'))
+    expect(calculations).toBe(1)
+    expect(reads).toEqual(Object.fromEntries(paths.map(resource => [resource, resource === path ? 2 : 1])))
   })
 
   it('200이지만 포트폴리오 구성이 빠진 응답은 빈 결과 안내를 보여 준다', async () => {
