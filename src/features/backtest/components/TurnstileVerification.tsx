@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 
 interface WidgetOptions {
   sitekey: string;
   action: string;
   size: 'flexible';
-  appearance: 'interaction-only';
+  appearance: 'always';
   'response-field': false;
   callback: (token: string) => void;
   'expired-callback': () => void;
@@ -51,10 +50,9 @@ interface Props {
   siteKey: string;
   resetKey: number;
   onToken: (token: string) => void;
-  verified?: boolean;
 }
 
-export function TurnstileVerification({ siteKey, resetKey, onToken, verified = false }: Props) {
+export function TurnstileVerification({ siteKey, resetKey, onToken }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -70,7 +68,7 @@ export function TurnstileVerification({ siteKey, resetKey, onToken, verified = f
         const invalidate = () => { if (active) onToken(''); };
         widget = api.render(container.current, {
           sitekey: siteKey, action: 'backtest', size: 'flexible',
-          appearance: 'interaction-only', 'response-field': false,
+          appearance: 'always', 'response-field': false,
           callback: token => { if (active) { setError(false); onToken(token); } },
           'expired-callback': invalidate,
           'error-callback': () => { if (active) { invalidate(); setError(true); } },
@@ -86,11 +84,6 @@ export function TurnstileVerification({ siteKey, resetKey, onToken, verified = f
 
   return (
     <div className="w-full max-w-[300px] space-y-2" aria-label="사람 인증">
-      <div className="flex items-center justify-end gap-1.5 text-xs text-muted-foreground" role="status" aria-live="polite">
-        {verified ? <><ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />사람 인증 완료</>
-          : (!siteKey || error) ? <><ShieldAlert className="h-4 w-4" aria-hidden="true" />사람 인증 필요</>
-          : <><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />사람 인증 확인 중…</>}
-      </div>
       <div ref={container} className="w-full" />
       {(!siteKey || error) && (
         <div role="alert" className="text-sm text-destructive">
