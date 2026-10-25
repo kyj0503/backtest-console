@@ -121,7 +121,7 @@ const StatsSummary: React.FC<{ stats: Record<string, unknown> | null | undefined
       tone: mapVariantToTone(
         getStatVariant(numberValue(stats.sharpe_ratio ?? stats.Sharpe_Ratio), 'sharpe'),
       ),
-      description: '리스크 대비 성과 지표 (Sharpe)',
+      description: '일간 수익률 평균 ÷ 표준편차 × √252 · 무위험 수익률 0%',
     },
     {
       label: '연간 변동성',
