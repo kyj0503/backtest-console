@@ -9,7 +9,7 @@ import { Button } from '@/shared/ui/button';
 import { HEADING_STYLES, TEXT_STYLES } from '@/shared/styles/design-tokens';
 import { generateTextReport, generateCSVReport } from '../services/reportGenerator';
 
-const BacktestResults: React.FC<BacktestResultsProps> = ({ data, isPortfolio }) => {
+const BacktestResults: React.FC<BacktestResultsProps> = ({ data, isPortfolio, showSupplementalNotice = true }) => {
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const downloadAsTextReport = () => {
@@ -78,7 +78,7 @@ const BacktestResults: React.FC<BacktestResultsProps> = ({ data, isPortfolio }) 
         <WarningBanner warnings={data.warnings} />
       )}
 
-      {isPortfolio && 'supplemental_status' in data && (
+      {showSupplementalNotice && isPortfolio && 'supplemental_status' in data && (
         <SupplementalStatusNotice status={data.supplemental_status} />
       )}
 
