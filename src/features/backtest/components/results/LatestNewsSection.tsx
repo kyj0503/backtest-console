@@ -115,7 +115,7 @@ const LatestNewsSection: React.FC<LatestNewsSectionProps> = ({
         <div className={SPACING.itemCompact}>
           <h3 className={HEADING_STYLES.h3}>최신 뉴스</h3>
           <p className={TEXT_STYLES.caption}>
-            백테스트 기간과 관련된 최신 뉴스
+          선택한 종목의 최신 뉴스 · 백테스트 기간과 무관
           </p>
         </div>
       </div>

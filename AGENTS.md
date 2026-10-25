@@ -11,7 +11,7 @@
 ## Validation and deployment
 
 - Verify in Docker before declaring work complete: `docker build --target test .`, `sh scripts/audit-deps.sh`, and `docker build --target runtime .`.
-- The test target runs ESLint, production and test TypeScript checks, and Vitest. All 344 tests passed before the repository split (2026-10-09).
+- The test target runs ESLint, production and test TypeScript checks, and Vitest. Current baseline: 356 tests passed (2026-10-25).
 - GitHub Actions validates PRs and main/dev pushes. Only main publishes an ARM64 image and deploys its immutable digest through Tailscale and pinned OpenSSH.
 - production is the only OCI environment, with its deployment SSH key and OIDC identity. dev runs CI only; local development uses Compose.
 - Compose and deployment scripts live here; shared gateway files live outside the application repositories. Runtime secrets never belong in Git.
@@ -28,6 +28,7 @@
 - Tailwind 4 is CSS-first. Theme values are injected at runtime; preserve `.app-container` and the existing dark custom variant.
 - The backend's minimum period and FE `VALIDATION_RULES.MIN_BACKTEST_PERIOD_DAYS` must remain aligned.
 - `/api/v1/backtest` must reach the environment-specific backend without redirecting POSTs or adding a duplicate `/api` prefix.
+- After calculation, independently request `/api/v1/prices`, `/exchange-rates`, `/benchmarks`, and `/news`. Retry only the chosen resource, merge only its fields with functional state updates, and abort all old reads on a new calculation or unmount. News is latest news and has no date-range query.
 - Node package changes require updating package-lock.json and re-running tests and dependency audit. Do not weaken the high/critical vulnerability gate.
 
 ## Commit messages

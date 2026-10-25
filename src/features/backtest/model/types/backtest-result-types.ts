@@ -250,6 +250,7 @@ export type BacktestResultData = ChartData | PortfolioData;
 export interface BacktestResultsProps {
   data: BacktestResultData;
   isPortfolio: boolean;
+  showSupplementalNotice?: boolean;
 }
 
 export interface StockDataItem {
