@@ -33,15 +33,12 @@ describe('Turnstile calculation gate', () => {
     expect(button).toBeDisabled();
     await waitFor(() => expect(options).toHaveLength(1));
     expect(options[0]!).toMatchObject({ sitekey: 'public-sitekey', action: 'backtest',
-      appearance: 'interaction-only', 'response-field': false });
-    expect(screen.getByRole('status')).toHaveTextContent('사람 인증 확인 중');
+      appearance: 'always', 'response-field': false });
     for (const callback of ['expired-callback', 'error-callback', 'timeout-callback'] as const) {
       act(() => options[0]!.callback('fresh-token'));
       expect(button).toBeEnabled();
-      expect(screen.getByRole('status')).toHaveTextContent('사람 인증 완료');
       act(() => options[0]![callback]());
       expect(button).toBeDisabled();
-      expect(screen.getByRole('status')).not.toHaveTextContent('사람 인증 완료');
     }
   });
 

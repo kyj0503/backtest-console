@@ -190,7 +190,7 @@ const PortfolioBacktestForm: React.FC<PortfolioBacktestFormProps> = ({ onSubmit,
         {/* 제출 버튼 */}
         <div className="flex flex-col items-end justify-end gap-3 pt-4 pb-6 sm:flex-row sm:items-center sm:gap-4 sm:pb-8">
           {verificationRequired && <TurnstileVerification siteKey={siteKey}
-            resetKey={verificationAttempt} onToken={setTurnstileToken} verified={!!turnstileToken} />}
+            resetKey={verificationAttempt} onToken={setTurnstileToken} />}
           <Button
             type="submit"
             disabled={loading || state.ui.isLoading || (verificationRequired && !turnstileToken)}
