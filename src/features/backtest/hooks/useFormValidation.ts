@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { BacktestFormState } from '../model/types/backtest-form-types';
 import { backtestFormHelpers } from '../model/backtestFormReducer';
-import { ASSET_TYPES, VALIDATION_RULES, supportsDcaAndRebalancing } from '../model/strategyConfig';
+import { VALIDATION_RULES, supportsDcaAndRebalancing } from '../model/strategyConfig';
+import { calculateDcaPeriods } from '../utils/calculateDcaPeriods';
 
 export interface UseFormValidationReturn {
   errors: string[];
@@ -44,17 +45,37 @@ export function validateBacktestForm(formState: BacktestFormState): string[] {
 
   // 포트폴리오 검증 (중복/빈값/금액/DCA/비중 합계)
   errors.push(...backtestFormHelpers.validatePortfolio(formState.portfolio));
+  if (formState.portfolioInputMode === 'weight') {
+    if (!Number.isFinite(formState.totalInvestment) || formState.totalInvestment <= 0 || formState.totalInvestment > 1e12) {
+      errors.push('전체 투자금액은 0 초과 1조 달러 이하여야 합니다.');
+    }
+    if (formState.portfolio.some(s => typeof s.weight !== 'number' || !Number.isFinite(s.weight) || s.weight <= 0 || s.weight > 100)) {
+      errors.push('비중 모드에서는 모든 종목의 비중을 0 초과 100% 이하로 입력해주세요.');
+    }
+    const plannedCents = formState.portfolio.reduce((sum, s) => sum + Math.round((s.totalAmount ?? NaN) * 100), 0);
+    if (!Number.isFinite(plannedCents) || plannedCents !== Math.round(formState.totalInvestment * 100)) {
+      errors.push('종목별 예정 납입액의 합계가 전체 투자금액과 일치해야 합니다.');
+    }
+  }
 
   // 기술적 전략은 분할 매수를 지원하지 않는다 (백엔드가 422로 거부 — A-02)
   if (!supportsDcaAndRebalancing(formState.strategy.selectedStrategy)) {
     const dcaSymbols = formState.portfolio
-      .filter(stock => stock.investmentType === 'dca' && stock.assetType !== ASSET_TYPES.CASH)
+      .filter(stock => stock.investmentType === 'dca')
       .map(stock => stock.symbol.toUpperCase() || '(빈 종목)');
     if (dcaSymbols.length > 0) {
       errors.push(
         `기술적 전략에서는 분할 매수(DCA)를 사용할 수 없습니다: ${dcaSymbols.join(', ')}. ` +
         '일시불로 바꾸거나 Buy & Hold 전략을 선택해주세요.'
       );
+    }
+  }
+
+  if (formState.dates.startDate && formState.dates.endDate) {
+    for (const stock of formState.portfolio) {
+      if (stock.investmentType === 'dca' && calculateDcaPeriods(formState.dates.startDate, formState.dates.endDate, stock.dcaFrequency || 'monthly_1') < 2) {
+        errors.push(`${stock.symbol}: 선택한 기간에 추가 DCA 납입일이 없습니다.`);
+      }
     }
   }
 

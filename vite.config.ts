@@ -4,7 +4,7 @@ import path from 'path'
 
 // https://vitejs.dev/config/
 // When running inside Docker Compose, use service hostnames on the shared network.
-const FASTAPI_TARGET = process.env.FASTAPI_PROXY_TARGET || 'http://localhost:8000';
+const BACKTEST_TARGET = process.env.BACKTEST_PROXY_TARGET || process.env.FASTAPI_PROXY_TARGET || 'http://localhost:8000';
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
@@ -35,10 +35,11 @@ export default defineConfig(({ mode }) => ({
     // CORS 설정
     cors: true,
     proxy: {
-      // FastAPI 서버 (백테스트 - 인증 불필요) - 먼저 매칭되어야 함
-      '/api/v1/backtest': {
-        target: FASTAPI_TARGET,
+      // Rust API: calculation and all four independently loaded reference resources.
+      '/api/v1': {
+        target: BACKTEST_TARGET,
         changeOrigin: true,
+        proxyTimeout: 180_000,
       },
     }
   },

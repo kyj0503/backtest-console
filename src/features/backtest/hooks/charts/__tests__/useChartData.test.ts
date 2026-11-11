@@ -122,7 +122,7 @@ describe('useChartData: portfolioEquityData (weekly aggregation, multi-year rang
     });
 
     return makePortfolioData({
-      portfolio_statistics: makeStats({ Start: '2020-01-01', End: '2023-01-01' }), // 3년
+      portfolio_statistics: makeStats({ Start: '2021-01-01', End: '2024-01-10' }), // 3년
       equity_curve, daily_returns,
     });
   }
@@ -282,11 +282,11 @@ describe('characterization: single-ticker weekly aggregation', () => {
 
   function buildSingle(): ChartData {
     return {
-      ticker: 'AAPL', start_date: '2020-01-01', end_date: '2023-01-01', // 3년 -> weekly
+      ticker: 'AAPL', start_date: '2021-01-01', end_date: '2024-01-10', // 3년 -> weekly
       equity_data: dates.map((date, i) => ({ date, value: 100 + i, return_pct: 1, drawdown_pct: -i })),
       ohlc_data: dates.map((date, i) => ({ date, open: i, high: i, low: i, close: i, volume: i })),
       exchange_rates: dates.map((date, i) => ({ date, rate: 1300 + i })),
-      // S&P 500은 1/7을 빼서, 인덱스 기반 주간 버킷의 태그 날짜가 1/8로 밀리게 한다.
+      // S&P 500의 1/7이 없어도 다른 시계열과 동일한 일요일 경계를 사용한다.
       sp500_benchmark: dates.filter((d) => d !== '2024-01-07')
         .map((date, i) => ({ date, close: 4000 + i, return_pct: 1 })) as ChartData['sp500_benchmark'],
       nasdaq_benchmark: dates
@@ -328,9 +328,9 @@ describe('characterization: single-ticker weekly aggregation', () => {
     const sp = result.current.sp500Benchmark;
     const nq = result.current.nasdaqBenchmark;
 
-    expect(sp.map((p) => [p.date, p.close])).toEqual([['2024-01-08', 4006], ['2024-01-10', 4008]]);
-    expect(sp[0]!.return_pct).toBeCloseTo(7.213535210700983, 9);
-    expect(sp[1]!.return_pct).toBeCloseTo(2.0100000000000007, 9);
+    expect(sp.map((p) => [p.date, p.close])).toEqual([['2024-01-07', 4005], ['2024-01-10', 4008]]);
+    expect(sp[0]!.return_pct).toBeCloseTo((1.01 ** 6 - 1) * 100, 9);
+    expect(sp[1]!.return_pct).toBeCloseTo((1.01 ** 3 - 1) * 100, 9);
     expect(nq.map((p) => [p.date, p.close])).toEqual([['2024-01-07', 15006], ['2024-01-10', 15009]]);
     expect(nq[0]!.return_pct).toBeCloseTo(14.868566764928005, 9); // 1.02^7 - 1
     expect(nq[1]!.return_pct).toBeCloseTo(6.120799999999993, 9); // 1.02^3 - 1
@@ -364,7 +364,7 @@ describe('characterization: portfolio equity fallback and monthly aggregation', 
   it('emits a value-less point and warns when no equity exists on or before a return bucket', () => {
     const dates = sequentialDates('2024-01-01', 10);
     const data = makePortfolioData({
-      portfolio_statistics: makeStats({ Start: '2020-01-01', End: '2023-01-01' }), // weekly
+      portfolio_statistics: makeStats({ Start: '2021-01-01', End: '2024-01-10' }), // weekly
       // equity는 1/9부터만 있다 -> 첫 버킷(1/7)에는 on-or-before 값도 없다.
       equity_curve: Object.fromEntries(dates.slice(8).map((d) => [d, 1000])),
       daily_returns: Object.fromEntries(dates.map((d) => [d, 1])),

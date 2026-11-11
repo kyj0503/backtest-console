@@ -4,6 +4,11 @@ React·TypeScript로 구현한 전략·포트폴리오 백테스트 화면입니
 백엔드와 DB는 [kyj0503/backtest](https://github.com/kyj0503/backtest)에서 관리합니다.
 기존 backtest 저장소의 `backtest_fe` 관련 커밋 456개를 보존하여 분리했습니다.
 
+`rust-migration` 브랜치는 기존 React 화면을 유지하고 Rust 백엔드의 동일한
+`/api/v1` 계약을 사용합니다. 개발 프록시는 계산 POST와 네 참고 데이터 GET을
+모두 전달합니다. `BACKTEST_PROXY_TARGET`으로 대상을 지정하며 기존
+`FASTAPI_PROXY_TARGET`도 이전 환경과의 호환을 위해 지원합니다.
+
 ## 로컬 실행
 
 백엔드 저장소에서 개발 Compose를 먼저 실행한 후:
@@ -31,6 +36,11 @@ docker build --target runtime .
 
 Docker test 단계에서 ESLint, 앱·테스트 TypeScript 검사, Vitest를 실행합니다.
 의존성 감사는 예외 없이 high/critical 발견을 차단합니다. Playwright E2E는 FE/BE가 실행 중일 때 별도로 수행합니다.
+Rust 통합 검증은 두 저장소를 나란히 둔 뒤 백엔드 저장소에서
+`docker compose -f compose.rust-test.yaml up --build --abort-on-container-exit --exit-code-from e2e`로 실행합니다.
+종료 후 같은 파일로 `docker compose -f compose.rust-test.yaml down`을 실행합니다.
+합성 시세·임시 MySQL·Chromium을 사용하며 기존 DB와 호스트 포트에 영향을 주지 않습니다.
+자세한 범위는 백엔드의 `docs/rust-migration.md`를 참조하세요.
 shadcn으로 생성한 UI 컴포넌트는 저장소 소스에 포함되어 있습니다. 빌드·실행에서 쓰지 않는 생성 CLI 의존성은 제거했습니다.
 
 ## GitHub Actions 배포

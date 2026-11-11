@@ -165,7 +165,7 @@ describe('aggregateReturns', () => {
     const result = aggregateReturns(data, 'weekly');
 
     expect(result).toHaveLength(1);
-    expect(result[0]?.date).toBe('2024-01-03'); // 마지막 항목의 날짜로 태그됨
+    expect(result[0]?.date).toBe('2024-01-07'); // 공통 일요일 경계
     expect(result[0]?.return_pct).toBeCloseTo(6.59, 9);
   });
 
@@ -175,7 +175,7 @@ describe('aggregateReturns', () => {
 
     const result = aggregateReturns(data, 'weekly');
 
-    expect(result.map((r) => r.date)).toEqual([dates[6], dates[9]]);
+    expect(result.map((r) => r.date)).toEqual(['2024-01-07', '2024-01-14']);
   });
 
   it('closes each monthly bucket the day before the next Nth-weekday boundary, hand-derived dates', () => {
@@ -426,7 +426,7 @@ describe('characterization: monthly return aggregation gaps', () => {
   it('keeps extra fields of the bucket\'s last day and only overwrites return_pct', () => {
     const data = sequentialDates('2024-01-01', 3).map((date, i) => ({ date, return_pct: 0, tag: `t${i}` }));
 
-    expect(aggregateReturns(data, 'weekly')).toEqual([{ date: '2024-01-03', return_pct: 0, tag: 't2' }]);
+    expect(aggregateReturns(data, 'weekly')).toEqual([{ date: '2024-01-07', return_pct: 0, tag: 't2' }]);
   });
 });
 

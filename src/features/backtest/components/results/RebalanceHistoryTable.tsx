@@ -14,10 +14,12 @@ import { formatPriceWithCurrency } from '@/shared/lib/utils/numberUtils';
 
 interface RebalanceHistoryTableProps {
   rebalanceHistory: RebalanceEvent[];
+  portfolioComposition?: Array<{symbol: string; asset_id?: string}>;
 }
 
-const RebalanceHistoryTable: React.FC<RebalanceHistoryTableProps> = ({ rebalanceHistory }) => {
+const RebalanceHistoryTable: React.FC<RebalanceHistoryTableProps> = ({ rebalanceHistory, portfolioComposition = [] }) => {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const names = Object.fromEntries(portfolioComposition.map(a => [a.asset_id ?? a.symbol, a.symbol]));
 
   const toggleRow = (index: number) => {
     const newExpanded = new Set(expandedRows);
@@ -145,7 +147,7 @@ const RebalanceHistoryTable: React.FC<RebalanceHistoryTableProps> = ({ rebalance
                       <div className="space-y-1">
                         {Object.entries(event.weights_before).map(([symbol, weight]) => (
                           <div key={symbol} className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">{symbol}</span>
+                            <span className="text-muted-foreground">{names[symbol] ?? symbol}</span>
                             <span className="font-medium">{(weight * 100).toFixed(2)}%</span>
                           </div>
                         ))}
@@ -156,7 +158,7 @@ const RebalanceHistoryTable: React.FC<RebalanceHistoryTableProps> = ({ rebalance
                       <div className="space-y-1">
                         {Object.entries(event.weights_after).map(([symbol, weight]) => (
                           <div key={symbol} className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">{symbol}</span>
+                            <span className="text-muted-foreground">{names[symbol] ?? symbol}</span>
                             <span className="font-medium">{(weight * 100).toFixed(2)}%</span>
                           </div>
                         ))}

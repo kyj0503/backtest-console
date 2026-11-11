@@ -3,6 +3,7 @@
 import type { IndicatorData } from './api-types';
 
 export interface Stock {
+  asset_id?: string;
   symbol: string;
   weight: number;
   amount?: number;
@@ -12,6 +13,9 @@ export interface Stock {
 // BE individual_returns 항목. return은 이미 백분율(8 = 8%), weight는 0~1 비율이다.
 // 금액·체결가는 모두 USD다. 매수 후 보유도 실제 납입액과 최종 평가액을 싣는다.
 export interface IndividualReturn {
+  asset_id?: string;
+  symbol?: string;
+  asset_type?: 'stock' | 'cash';
   weight: number;
   return: number;
   amount?: number;
@@ -94,6 +98,8 @@ export interface PortfolioStatistics {
   Final_Value: number;
   Peak_Value: number;
   Total_Return: number;
+  Time_Weighted_Return?: number;
+  Return_Observation_Days_Per_Year?: number;
   /** 연환산 수익률(%) — 시간가중(TWR). DCA 납입 시점의 영향을 뺀 연평균 복리 수익률 */
   Annual_Return: number;
   Annual_Volatility: number;
@@ -109,7 +115,7 @@ export interface PortfolioStatistics {
   Win_Rate: number;
   /** 거래 기준 승률(%): 전 종목 거래 합산. 전략 경로에만 있고, 거래가 없으면 null */
   Trade_Win_Rate?: number | null;
-  /** 일간 수익 합 / 일간 손실 합. 손실일이 없으면 계산 불가라 null */
+  /** 청산 거래의 순이익 합 / 순손실 절댓값. 손실 또는 청산 원장이 없으면 null */
   Profit_Factor: number | null;
   sp500_total_return_pct?: number;
   alpha_vs_sp500_pct?: number;
@@ -151,6 +157,8 @@ export interface NewsItem {
 }
 
 export interface RebalanceTrade {
+  commission?: number;
+  asset_id?: string;
   symbol: string;
   action: 'buy' | 'sell' | 'increase' | 'decrease';
   // 현금 조정(increase/decrease)에는 없다 — 백엔드 portfolio_rebalancer.py가
@@ -181,6 +189,12 @@ export interface TickerInfo {
 }
 
 export interface TradeLog {
+  EntryPriceNative?: number;
+  ExitPriceNative?: number;
+  PriceCurrency?: string;
+  NativeCurrency?: string;
+  QuantityUnit?: string;
+  Type?: 'BUY' | 'SELL';
   EntryTime: string;
   ExitTime?: string;
   EntryPrice: number;
@@ -193,6 +207,11 @@ export interface TradeLog {
 
 export interface StrategyStats {
   trade_log?: TradeLog[];
+  open_positions?: Array<Pick<TradeLog, 'EntryTime' | 'EntryPrice' | 'Size' | 'EntryPriceNative' | 'PriceCurrency' | 'NativeCurrency' | 'QuantityUnit'> & {
+    MarketPrice?: number;
+    MarketValue?: number;
+    Commission?: number;
+  }>;
   total_trades?: number;
   win_rate_pct?: number;
   profit_factor?: number | null;  // 계산 불가면 null
@@ -216,6 +235,12 @@ export type SupplementalOutcome = 'ok' | 'empty' | 'skipped' | 'timeout' | 'erro
 export type SupplementalStatus = Partial<Record<SupplementalSection, SupplementalOutcome>>;
 
 export interface PortfolioData {
+  calculation_assumptions?: {
+    quantity_unit: string;
+    account_currency: string;
+    weight_basis: string;
+    price_basis: string;
+  };
   portfolio_statistics: PortfolioStatistics;
   individual_returns: Record<string, IndividualReturn>;
   portfolio_composition: Stock[];

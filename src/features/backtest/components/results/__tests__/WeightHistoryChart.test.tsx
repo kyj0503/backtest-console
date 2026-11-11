@@ -34,6 +34,22 @@ const rebalances: RebalanceEvent[] = [
 ]
 
 describe('WeightHistoryChart', () => {
+  it('R06 keeps cash and a same-symbol stock as distinct nonzero asset series', () => {
+    const { container } = render(<WeightHistoryChart
+      portfolioComposition={[{symbol:'CASH',asset_id:'CASH',asset_type:'stock'}, {symbol:'CASH',asset_id:'CASH__cash_2',asset_type:'cash'}]}
+      weightHistory={[{date:'2023-01-02',CASH:0.5,CASH__cash_2:0.5},{date:'2023-01-03',CASH:0.5,CASH__cash_2:0.5}]}
+    />);
+    expect(container.querySelectorAll('.recharts-area')).toHaveLength(2);
+    expect(screen.getByText('CASH (주식)')).toBeInTheDocument();
+    expect(screen.getByText('CASH')).toBeInTheDocument();
+    const paths=[...container.querySelectorAll('.recharts-area-area')];
+    expect(paths).toHaveLength(2);
+    // With the missing-key regression one series collapses to zero height.
+    for (const path of paths) {
+      const ys=[...(path.getAttribute('d') ?? '').matchAll(/[ML](-?[\d.]+),(-?[\d.]+)/g)].map(m=>Number(m[2]));
+      expect(Math.max(...ys)-Math.min(...ys)).toBeGreaterThan(100);
+    }
+  });
   it('비중 데이터가 없으면 빈 상태 문구를 보여 준다', () => {
     render(<WeightHistoryChart weightHistory={[]} portfolioComposition={composition} />)
 

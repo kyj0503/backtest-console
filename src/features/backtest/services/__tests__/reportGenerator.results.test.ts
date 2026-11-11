@@ -191,12 +191,12 @@ describe('generateCSVReport — 포트폴리오', () => {
             {
               date: RESULT_DATES[4],
               trades: [
-                { symbol: 'AAPL', action: 'sell', shares: 1.5, price: 130 },
-                { symbol: 'MSFT', action: 'buy', shares: 0.8, price: 245 },
+                { symbol: 'AAPL', action: 'sell', shares: 1.5, price: 130, commission: 0.195 },
+                { symbol: 'MSFT', action: 'buy', shares: 0.8, price: 245, commission: 0.196 },
               ],
               weights_before: { AAPL: 0.62, MSFT: 0.38 },
               weights_after: { AAPL: 0.6, MSFT: 0.4 },
-              commission_cost: 0.39,
+              commission_cost: 0.391,
             },
           ],
         }),
@@ -205,8 +205,8 @@ describe('generateCSVReport — 포트폴리오', () => {
     )
 
     expect(csv).toContain('리밸런싱 히스토리')
-    expect(csv).toContain(`${RESULT_DATES[4]},AAPL,매도,195.00,1.5000,130.00,0.39`)
-    expect(csv).toContain(`${RESULT_DATES[4]},MSFT,매수,196.00,0.8000,245.00,0.39`)
+    expect(csv).toContain(`${RESULT_DATES[4]},AAPL,매도,195.00,1.5,130,0.20`)
+    expect(csv).toContain(`${RESULT_DATES[4]},MSFT,매수,196.00,0.8,245,0.20`)
   })
 
   it('현금 조정 거래(shares 없이 amount만 옴)도 CSV를 깨뜨리지 않는다', () => {
@@ -229,9 +229,9 @@ describe('generateCSVReport — 포트폴리오', () => {
     })
 
     const csv = lines(generateCSVReport(data, true))
-    expect(csv).toContain(`${RESULT_DATES[4]},AAPL,매도,260.00,2.0000,130.00,0.00`)
-    expect(csv).toContain(`${RESULT_DATES[4]},CASH,증가,260.00,N/A,1.00,0.00`)
-    expect(csv).toContain(`${RESULT_DATES[4]},USD,감소,50.00,N/A,1.00,0.00`)
+    expect(csv).toContain(`${RESULT_DATES[4]},AAPL,매도,260.00,2,130,N/A`)
+    expect(csv).toContain(`${RESULT_DATES[4]},CASH,증가,260.00,N/A,1,N/A`)
+    expect(csv).toContain(`${RESULT_DATES[4]},USD,감소,50.00,N/A,1,N/A`)
   })
 
   it('비중 변화는 첫날·마지막날·30일 간격으로 샘플링해 퍼센트로 쓴다', () => {
@@ -255,7 +255,7 @@ describe('generateCSVReport — 포트폴리오', () => {
         true
       )
     )
-    expect(csv).toContain('d0,N/A')
+    expect(csv).toContain('d0,N/A,N/A')
   })
 
   it('자산 가치 추이는 100건 이하면 그대로, 넘으면 7일 간격으로 줄인다', () => {

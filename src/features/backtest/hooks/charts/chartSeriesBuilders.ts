@@ -148,7 +148,7 @@ export function buildPortfolioEquitySeries(
     return_pct: return_pct as number,
   }));
 
-  const aggregatedReturns = aggregateReturns(dailyReturnsArray, aggregationType);
+  const aggregatedReturns = aggregateReturns(dailyReturnsArray, aggregationType, endDate);
 
   return alignToReturnBuckets(rawEquityData, aggregatedReturns, missingEquityPoint('포트폴리오 차트'));
 }
@@ -185,7 +185,7 @@ export function buildSingleEquitySeries(
     return_pct: point.return_pct ?? 0,
   }));
 
-  const aggregatedReturns = aggregateReturns(dailyReturnsArray, aggregationType);
+  const aggregatedReturns = aggregateReturns(dailyReturnsArray, aggregationType, endDate);
 
   return alignToReturnBuckets(rawData, aggregatedReturns, missingEquityPoint('단일종목 차트'));
 }
@@ -223,7 +223,7 @@ export function buildBenchmarkSeries(
     return_pct: (point as BenchmarkSeriesPoint).return_pct ?? 0,
   }));
 
-  const aggregatedReturns = aggregateReturns(dailyReturnsArray, aggregationType);
+  const aggregatedReturns = aggregateReturns(dailyReturnsArray, aggregationType, endDate);
 
   return alignToReturnBuckets(rawData, aggregatedReturns, r => {
     console.warn(`[${BENCHMARK_LABELS[benchmarkType]}] ${r.date} 날짜의 데이터 없음 (집계수익률=${r.return_pct}%)`);

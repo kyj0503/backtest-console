@@ -61,6 +61,7 @@ export const validateWeightSum = (portfolio: Array<{ weight?: number }>): boolea
 export const getDcaAdjustedTotal = (
   portfolio: Array<{
     amount: number;
+    totalAmount?: number;
     investmentType?: 'lump_sum' | 'dca';
     dcaFrequency?: DcaFrequency;
   }>,
@@ -73,6 +74,7 @@ export const getDcaAdjustedTotal = (
   }
 
   return portfolio.reduce((sum, stock) => {
+    if (stock.totalAmount !== undefined) return sum + stock.totalAmount;
     const amount = stock.amount || 0;
     
     if (stock.investmentType === 'dca') {
@@ -115,6 +117,6 @@ export const getDcaAmountFromWeight = (
   const dcaPeriods = calculateDcaPeriods(startDate, endDate, dcaFrequency);
 
   // 회당 투자 금액 = 총액 / 투자 횟수
-  return Math.round(totalAmount / dcaPeriods);
+  return Math.floor(totalAmount * 100 / dcaPeriods) / 100;
 };
 
