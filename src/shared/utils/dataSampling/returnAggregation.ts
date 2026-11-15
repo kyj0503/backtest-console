@@ -16,60 +16,34 @@ import { parseLocalDate, getWeekdayOccurrence, getNextMonthNthWeekday } from './
  */
 export function aggregateReturns<T extends { date: string; return_pct: number }>(
   dailyReturns: T[],
-  aggregationType: 'daily' | 'weekly' | 'monthly'
+  aggregationType: 'daily' | 'weekly' | 'monthly',
+  rangeEnd?: string
 ): T[] {
   if (!dailyReturns || dailyReturns.length === 0) return [];
 
   // 명시적으로 daily 처리 (타입 안정성 향상)
   if (aggregationType === 'daily') return dailyReturns;
-  if (aggregationType === 'weekly') return aggregateWeeklyReturns(dailyReturns);
+  if (aggregationType === 'weekly') return aggregateWeeklyReturns(dailyReturns, rangeEnd);
   if (aggregationType === 'monthly') return aggregateMonthlyReturns(dailyReturns);
 
   return dailyReturns;
 }
 
-/**
- * 주간 수익률 계산 (7일 단위, 복리 기반)
- * 
- * ⚠️ 주의: 배열 인덱스 기반 집계로, 실제 달력 주 경계와 일치하지 않을 수 있습니다.
- * - 데이터가 월요일이 아닌 날짜에 시작하면 첫 주는 7일 미만일 수 있습니다.
- * - 금융 백테스트에서 주간 리밸런싱 등의 경우 실제 주 경계(월~일)와 다를 수 있습니다.
- * - 매 7번째 항목마다 집계되므로 중간에 거래일이 없는 날이 있어도 카운트됩니다.
- * 
- * @param dailyReturns 일간 수익률 배열
- * @returns 7일 단위로 집계된 복리 수익률
- */
-function aggregateWeeklyReturns<T extends { date: string; return_pct: number }>(
-  dailyReturns: T[]
-): T[] {
-  if (!dailyReturns || dailyReturns.length === 0) return [];
-
-  const weekly: T[] = [];
-  const DAYS_PER_WEEK = 7;
-  let currentWeekData: T[] = [];
-
-  for (let i = 0; i < dailyReturns.length; i++) {
-    const item = dailyReturns[i];
-    if (!item) continue;
-    currentWeekData.push(item);
-
-    // 7일마다 또는 마지막 데이터일 때 주간 수익률 계산
-    if ((i + 1) % DAYS_PER_WEEK === 0 || i === dailyReturns.length - 1) {
-      if (currentWeekData.length > 0) {
-        const weeklyReturn = calculateCompoundReturn(currentWeekData);
-        const lastDay = currentWeekData[currentWeekData.length - 1];
-        if (lastDay) {
-          weekly.push({
-            ...lastDay,
-            return_pct: weeklyReturn,
-          });
-        }
-        currentWeekData = [];
-      }
-    }
+/** Compound each Monday-Sunday calendar bucket, shared by every series. */
+function aggregateWeeklyReturns<T extends { date: string; return_pct: number }>(dailyReturns: T[], rangeEnd?: string): T[] {
+  const buckets = new Map<string, T[]>();
+  for (const item of dailyReturns) {
+    const date = new Date(item.date + 'T00:00:00Z');
+    date.setUTCDate(date.getUTCDate() + (7 - date.getUTCDay()) % 7);
+    const sunday = date.toISOString().slice(0, 10);
+    const boundary = rangeEnd && rangeEnd < sunday ? rangeEnd : sunday;
+    const items = buckets.get(boundary) ?? [];
+    items.push(item);
+    buckets.set(boundary, items);
   }
-
-  return weekly;
+  return [...buckets.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, items]) => ({
+    ...items[items.length - 1]!, date, return_pct: calculateCompoundReturn(items),
+  }));
 }
 
 /**

@@ -4,6 +4,7 @@ import { StrategyParamValue } from './api-types';
 export interface Stock {
   symbol: string;
   amount: number;
+  totalAmount?: number;
   // Optional allocation weight in percent (0-100). If provided, UI will treat allocation as weight-based
   weight?: number;
   investmentType: 'lump_sum' | 'dca';

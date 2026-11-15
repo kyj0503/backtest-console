@@ -98,6 +98,8 @@ const PortfolioForm: React.FC<PortfolioFormProps> = ({
             endDate={endDate}
           />
         ))}
+      </div>
+      <div className={portfolioInputMode === 'weight' ? 'mt-3' : 'mt-3 md:hidden'}>
         <PortfolioSummary
           portfolio={portfolio}
           portfolioInputMode={portfolioInputMode}

@@ -3,7 +3,8 @@ import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveCo
 import { useRenderPerformance } from "@/shared/components";
 import StockSymbolSelector from './results/StockSymbolSelector';
 import { formatPriceWithCurrency } from "@/shared/lib/utils/numberUtils";
-import { TickerInfo } from '../model/types/backtest-result-types';
+import type { TickerInfo, TradeLog } from '../model/types/backtest-result-types';
+import { buildExecutionChartData } from '../utils/executionChartData';
 
 // 뷰포트 너비를 추적하는 훅.
 // 기존에는 렌더 시점에 window.innerWidth를 직접 읽어 마진/틱 간격/각도를
@@ -33,27 +34,6 @@ interface StockData {
   }>;
 }
 
-interface TradeLog {
-  EntryTime: string;
-  ExitTime?: string;
-  EntryPrice: number;
-  ExitPrice?: number;
-  Size: number;
-  Type?: 'BUY' | 'SELL';  // 거래 타입 (리밸런싱용)
-  PnL?: number;
-  ReturnPct?: number;
-}
-
-// 주가 데이터에 매매 신호를 merge한 차트 데이터 포인트
-// buySignal/sellSignal은 해당 날짜에 신호가 없으면 undefined (recharts가 점을 건너뜀)
-interface StockChartPoint {
-  date: string;
-  price: number;
-  volume?: number;
-  buySignal?: number;
-  sellSignal?: number;
-}
-
 interface StockPriceChartProps {
   stocksData: StockData[];
   tickerInfo?: { [symbol: string]: TickerInfo };
@@ -62,66 +42,7 @@ interface StockPriceChartProps {
   className?: string;
 }
 
-// aggregation된 데이터에서 실제 거래 날짜에 가장 가까운 날짜를 찾는 함수
-const findClosestAggregationDate = (
-  tradeDate: string, 
-  aggregatedData: Array<{ date: string; price: number }>, 
-  aggregationType: 'daily' | 'weekly' | 'monthly'
-): string | null => {
-  const tradeDateTime = new Date(tradeDate).getTime();
-  
-  // daily aggregation이면 정확히 일치하는 날짜만 찾음
-  if (aggregationType === 'daily') {
-    const exactMatch = aggregatedData.find(d => d.date === tradeDate);
-    return exactMatch ? tradeDate : null;
-  }
-  
-  // weekly/monthly aggregation이면 기간 내에 포함되는 날짜 찾음
-  for (const dataPoint of aggregatedData) {
-    if (aggregationType === 'weekly') {
-      // 주간 데이터: 해당 주의 마지막 날짜를 사용
-      // 거래일이 해당 aggregation 기간 내에 있는지 확인
-      const dataDate = new Date(dataPoint.date);
-      const tradeDateObj = new Date(tradeDate);
-      
-      // 간단한 방법: 거래일이 aggregation 날짜와 같은 주에 있는지 확인
-      const dataWeek = Math.floor(dataDate.getTime() / (7 * 24 * 60 * 60 * 1000));
-      const tradeWeek = Math.floor(tradeDateObj.getTime() / (7 * 24 * 60 * 60 * 1000));
-      
-      if (dataWeek === tradeWeek) {
-        return dataPoint.date;
-      }
-    } else if (aggregationType === 'monthly') {
-      // 월간 데이터: 해당 월의 마지막 날짜를 사용
-      const tradeMonth = new Date(tradeDate).getMonth();
-      const tradeYear = new Date(tradeDate).getFullYear();
-      const dataMonth = new Date(dataPoint.date).getMonth();
-      const dataYear = new Date(dataPoint.date).getFullYear();
-      
-      if (tradeYear === dataYear && tradeMonth === dataMonth) {
-        return dataPoint.date;
-      }
-    }
-  }
-  
-  // 정확히 일치하지 않으면 가장 가까운 날짜 찾음 (fallback)
-  let closestDate: string | null = null;
-  let minDiff = Infinity;
-  
-  for (const dataPoint of aggregatedData) {
-    const dataDateTime = new Date(dataPoint.date).getTime();
-    const diff = Math.abs(dataDateTime - tradeDateTime);
-    
-    if (diff < minDiff) {
-      minDiff = diff;
-      closestDate = dataPoint.date;
-    }
-  }
-  
-  return closestDate;
-};
-
-const StockPriceChart: React.FC<StockPriceChartProps> = memo(({ stocksData, tickerInfo = {}, tradeLogs = {}, aggregationType = 'daily', className = "" }) => {
+const StockPriceChart: React.FC<StockPriceChartProps> = memo(({ stocksData, tickerInfo = {}, tradeLogs = {}, className = "" }) => {
   // 성능 모니터링
   useRenderPerformance('StockPriceChart');
 
@@ -133,68 +54,15 @@ const StockPriceChart: React.FC<StockPriceChartProps> = memo(({ stocksData, tick
   // 선택된 종목의 데이터 찾기
   const selectedStockData = stocksData.find(stock => stock.symbol === selectedSymbol);
 
-  // 선택된 종목의 매매 신호를 주가 데이터에 merge
-  const chartDataWithSignals = useMemo<StockChartPoint[]>(() => {
-    if (!selectedStockData) return [];
-
-    const logs = tradeLogs[selectedSymbol];
-    if (!logs || !Array.isArray(logs)) {
-      return selectedStockData.data.map(d => ({ ...d }));
-    }
-
-    // 날짜별 매매 신호 세트 생성 (날짜만 저장)
-    const buyDates = new Set<string>();
-    const sellDates = new Set<string>();
-
-    logs.forEach((trade) => {
-      // 실제 거래 날짜 추출
-      const tradeDates: string[] = [];
-
-      if (trade.Type) {
-        // Type 필드가 있으면 (리밸런싱, DCA 등)
-        if (trade.EntryTime && typeof trade.EntryTime === 'string') {
-          const entryDate = trade.EntryTime.split('T')[0]?.split(' ')[0];
-          if (entryDate) tradeDates.push(entryDate);
-        }
-      } else {
-        // 기존 로직 (하위 호환성)
-        if (trade.EntryTime && typeof trade.EntryTime === 'string') {
-          const entryDate = trade.EntryTime.split('T')[0]?.split(' ')[0];
-          if (entryDate) tradeDates.push(entryDate);
-        }
-        if (trade.ExitTime && typeof trade.ExitTime === 'string') {
-          const exitDate = trade.ExitTime.split('T')[0]?.split(' ')[0];
-          if (exitDate) tradeDates.push(exitDate);
-        }
-      }
-
-      // 각 거래 날짜를 aggregation된 데이터의 날짜에 매핑
-      tradeDates.forEach(tradeDate => {
-        const mappedDate = findClosestAggregationDate(tradeDate, selectedStockData.data, aggregationType);
-        if (mappedDate) {
-          if (trade.Type === 'BUY' || (!trade.Type && trade.EntryTime)) {
-            buyDates.add(mappedDate);
-          } else if (trade.Type === 'SELL' || (!trade.Type && trade.ExitTime)) {
-            sellDates.add(mappedDate);
-          }
-        }
-      });
-    });
-
-    // 주가 데이터에 매매 신호 merge (해당 날짜의 실제 주가를 사용)
-    const mergedData = selectedStockData.data.map(point => ({
-      ...point,
-      buySignal: buyDates.has(point.date) ? point.price : undefined,
-      sellSignal: sellDates.has(point.date) ? point.price : undefined,
-    }));
-
-    return mergedData;
-  }, [selectedSymbol, selectedStockData, tradeLogs, aggregationType]);
+  const chartCurrency = tickerInfo[selectedSymbol]?.currency || 'USD';
+  const chartDataWithSignals = useMemo(() => buildExecutionChartData(
+    selectedStockData?.data ?? [], tradeLogs[selectedSymbol] ?? [], chartCurrency,
+  ), [selectedStockData, selectedSymbol, tradeLogs, chartCurrency]);
 
   // Y축 도메인 계산 (메모이제이션)
   const yAxisDomain = useMemo<[number, number]>(() => {
     const prices = chartDataWithSignals
-      .map((d) => d.price)
+      .flatMap(d => [d.price, d.buySignal, d.sellSignal])
       .filter((price): price is number => typeof price === 'number' && !isNaN(price));
     
     if (prices.length === 0) return [0, 100];
@@ -239,9 +107,9 @@ const StockPriceChart: React.FC<StockPriceChartProps> = memo(({ stocksData, tick
   }
 
   // 날짜 포맷팅 함수
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: number) => {
     const date = new Date(dateString);
-    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
+    return `${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCDate().toString().padStart(2, '0')}`;
   };
 
   // 가격 포맷팅 함수
@@ -271,7 +139,11 @@ const StockPriceChart: React.FC<StockPriceChartProps> = memo(({ stocksData, tick
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
-                  dataKey="date"
+                  dataKey="time"
+                  type="number"
+                  scale="time"
+                  domain={['dataMin', 'dataMax']}
+                  allowDuplicatedCategory={false}
                   tickFormatter={formatDate}
                   tick={{ fontSize: 11 }}
                   interval={Math.max(1, Math.floor(chartDataWithSignals.length / (isNarrowViewport ? 4 : 8)))}
@@ -283,15 +155,18 @@ const StockPriceChart: React.FC<StockPriceChartProps> = memo(({ stocksData, tick
                   domain={yAxisDomain}
                 />
                 <Tooltip
-                  labelFormatter={(label: unknown) => `날짜: ${String(label)}`}
-                  formatter={(value: unknown, name: unknown) => {
-                    if (!value) return null;
-                    const key = String(name);
-                    const price = Number(value);
-                    if (key === 'price') return [formatPrice(price), '주가'];
-                    if (key === 'buySignal') return [formatPrice(price), '매수'];
-                    if (key === 'sellSignal') return [formatPrice(price), '매도'];
-                    return [String(value), key];
+                  content={({ active, label }) => {
+                    if (!active || label === undefined) return null;
+                    const points = chartDataWithSignals.filter(point => point.time === Number(label));
+                    if (!points.length) return null;
+                    return <div className="rounded border border-border bg-background p-3 text-sm shadow-md" role="status">
+                      <p>날짜: {points[0]?.date}</p>
+                      {points.map((point, index) => <div key={index}>
+                        {point.price !== undefined && <p>주가: {formatPrice(point.price)}</p>}
+                        {point.buySignal !== undefined && <p>매수: {formatPrice(point.buySignal)}</p>}
+                        {point.sellSignal !== undefined && <p>매도: {formatPrice(point.sellSignal)}</p>}
+                      </div>)}
+                    </div>;
                   }}
                 />
                 {/* 주가 라인 */}

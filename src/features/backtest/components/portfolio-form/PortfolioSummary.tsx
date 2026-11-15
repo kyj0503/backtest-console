@@ -32,7 +32,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
     const totalWeight = portfolio.reduce((sum, stock) => {
       return sum + (typeof stock.weight === 'number' ? stock.weight : 0);
     }, 0);
-    const isValid = Math.abs(totalWeight - 100) < 0.01;
+    const isValid = totalWeight >= 95 && totalWeight <= 105 && portfolio.every(s => typeof s.weight === 'number' && s.weight > 0);
     const displayWeight = totalWeight.toFixed(1);
 
     return (
@@ -61,6 +61,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
                 {displayWeight}%
               </Badge>
             </div>
+            <p className="text-xs text-muted-foreground">비중 합계 95~105%를 허용하며, 입력한 비율을 유지해 전체 투자금액에 맞춰 배분합니다. 모든 종목의 비중을 입력해주세요.</p>
           </div>
         </CardContent>
       </Card>

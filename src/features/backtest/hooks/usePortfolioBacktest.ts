@@ -47,7 +47,8 @@ function mergeRead(portfolio: PortfolioData, section: MarketDataSection, data: M
       const value = benchmarks.sp500_total_return_pct;
       if (typeof value === 'number' && Number.isFinite(value)) {
         statistics.sp500_total_return_pct = value;
-        statistics.alpha_vs_sp500_pct = statistics.Total_Return - value;
+        const twr = statistics.Time_Weighted_Return;
+        if (typeof twr === 'number' && Number.isFinite(twr)) statistics.alpha_vs_sp500_pct = twr - value;
       }
       fields = { sp500_benchmark: benchmarks.sp500_benchmark ?? portfolio.sp500_benchmark,
         nasdaq_benchmark: benchmarks.nasdaq_benchmark ?? portfolio.nasdaq_benchmark,
@@ -133,7 +134,7 @@ export function useBacktest() {
         setResult(data);
         if ('portfolio_statistics' in data.data && Array.isArray(data.data.portfolio_composition)) {
           const symbols = data.data.portfolio_composition
-            .filter(stock => stock.asset_type !== 'cash' && stock.symbol !== 'CASH').map(stock => stock.symbol);
+            .filter(stock => stock.asset_type !== 'cash').map(stock => stock.symbol);
           for (const section of MARKET_SECTIONS) void loadSection(section, request, symbols, controller);
         }
       }
@@ -154,7 +155,7 @@ export function useBacktest() {
     if (!result || !lastRequest || !run || isLoading || marketReads[section].phase === 'loading') return;
     if (!('portfolio_statistics' in result.data) || !Array.isArray(result.data.portfolio_composition)) return;
     const symbols = result.data.portfolio_composition
-      .filter(stock => stock.asset_type !== 'cash' && stock.symbol !== 'CASH').map(stock => stock.symbol);
+      .filter(stock => stock.asset_type !== 'cash').map(stock => stock.symbol);
     void loadSection(section, lastRequest, symbols, run);
   }, [result, lastRequest, isLoading, marketReads, loadSection]);
 

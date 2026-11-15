@@ -33,19 +33,12 @@ describe('recalcAmountsByWeight', () => {
     expect(aapl.symbol).toBe('AAPL');
     expect(googl.symbol).toBe('GOOGL');
 
-    // AAPL: $5,000 / 11 periods = $454.55 → $454
-    // GOOGL: ($10,000 - $4,994) / 11 = $455
-    expect(aapl.amount).toBeGreaterThan(0);
-    expect(googl.amount).toBeGreaterThan(0);
-
-    // 검증: 각 종목의 총 투자액 계산
-    const aapl_total = aapl.amount * 11;  // 회당 금액 × 11 periods
-    const googl_total = googl.amount * 11; // 회당 금액 × 11 periods
-    const combined_total = aapl_total + googl_total;
-
-    // 총 투자액이 $10,000 근처여야 함 (±5%)
-    expect(combined_total).toBeGreaterThanOrEqual(9500);
-    expect(combined_total).toBeLessThanOrEqual(10500);
+    // 1월~10월 첫 수요일: 정확히 10회, 자산마다 $5,000.
+    expect(aapl.amount).toBe(500);
+    expect(googl.amount).toBe(500);
+    expect(aapl.totalAmount).toBe(5000);
+    expect(googl.totalAmount).toBe(5000);
+    expect(aapl.amount * 10 + googl.amount * 10).toBe(10000);
   });
 
   it('divides the per-period amount evenly across DCA periods for a single-stock DCA portfolio', () => {

@@ -69,11 +69,20 @@ const BenchmarkIndexChart: React.FC<BenchmarkIndexChartProps> = memo(({
   });
 
   // 데이터를 시작점 100으로 normalize하는 함수 (샘플링은 useChartData에서 처리됨)
-  const normalizeData = <T extends { date: string }>(
+  const normalizeData = <T extends { date: string; return_pct?: number | null }>(
     data: T[],
     valueKey: keyof T & string
   ): NormalizedPoint[] => {
     if (!data || data.length === 0) return [];
+    // Return buckets already include their first period. Preserve it for both
+    // benchmarks and the portfolio; price rebasing after sampling would lose it.
+    if (data.every(point => typeof point.return_pct === 'number')) {
+      let cumulative = 100;
+      return data.map(point => {
+        cumulative *= 1 + (point.return_pct ?? 0) / 100;
+        return { date: point.date, normalized: cumulative };
+      });
+    }
     const startValue = Number(data[0]?.[valueKey]);
     if (!startValue || startValue === 0) return [];
 
@@ -124,10 +133,7 @@ const BenchmarkIndexChart: React.FC<BenchmarkIndexChartProps> = memo(({
 
     let cumulativeValue = 100; // 시작점 = 100
 
-    return portfolioEquityData.map((point, index) => {
-      if (index === 0) {
-        return { date: point.date, normalized: 100 };
-      }
+    return portfolioEquityData.map((point) => {
 
       // 일일/주간/월간 수익률을 누적: 현재 가치 = 이전 가치 × (1 + 수익률/100)
       // - return_pct: 백분율 (예: 2.5 = 2.5%)

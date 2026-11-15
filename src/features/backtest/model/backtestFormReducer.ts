@@ -15,73 +15,26 @@ export function recalcAmountsByWeight(
   startDate?: string,
   endDate?: string
 ): Stock[] {
-  if (!startDate || !endDate || totalInvestment === 0) {
-    // 날짜 정보 없으면 기본 계산
-    return portfolio.map(s =>
-      typeof s.weight === 'number'
-        ? { ...s, amount: Math.round((s.weight / 100) * totalInvestment) }
-        : s
-    );
+  const weights = portfolio.map(s => typeof s.weight === 'number' && Number.isFinite(s.weight) && s.weight > 0 ? s.weight : 0);
+  const sum = weights.reduce((a, b) => a + b, 0);
+  const budgetCents = Number.isFinite(totalInvestment) && totalInvestment > 0 ? Math.round(totalInvestment * 100) : 0;
+  // Normalize allowed weight totals, then distribute only cent rounding by
+  // largest remainder. The tie-breaker follows the asset, not its array position.
+  const allocations = weights.map(weight => sum > 0 ? budgetCents * weight / sum : 0);
+  const cents = allocations.map(Math.floor);
+  const ranked = portfolio.map((s, i) => ({i, remainder: allocations[i]! - cents[i]!,
+    key: JSON.stringify([s.assetType, s.symbol.toUpperCase(), s.investmentType, s.dcaFrequency, s.weight])}))
+    .filter(({i}) => weights[i]! > 0)
+    .sort((a, b) => b.remainder - a.remainder || a.key.localeCompare(b.key));
+  let remainder = sum > 0 ? budgetCents - cents.reduce((a, b) => a + b, 0) : 0;
+  for (const {i} of ranked) {
+    if (remainder-- <= 0) break;
+    cents[i] = cents[i]! + 1;
   }
-
-  // Step 1: weight 항목들의 인덱스 찾기
-  const weightIndices: number[] = [];
-  portfolio.forEach((s, index) => {
-    if (typeof s.weight === 'number') {
-      weightIndices.push(index);
-    }
-  });
-
-  if (weightIndices.length === 0) return portfolio;
-
-  // Step 2: 각 weight 항목의 amount 계산
-  const perPeriodAmounts: (number | null)[] = new Array(portfolio.length).fill(null);
-  let accumulatedTotalAmount = 0;  // 비 DCA 종목들의 누적 투자액
-
-  weightIndices.forEach((index, pos) => {
-    const s = portfolio[index];
-    if (!s) return;
-    const weightPercent = s.weight || 0;
-    const totalAmountForStock = (weightPercent / 100) * totalInvestment;
-    const isLastWeightItem = pos === weightIndices.length - 1;
-
-    if (s.investmentType === 'dca') {
-      const dcaPeriods = calculateDcaPeriods(startDate, endDate, s.dcaFrequency || 'monthly_1');
-
-      if (isLastWeightItem) {
-        // 마지막 DCA 항목: 정확한 오차 보정
-        // remainingTotal = 총액 - (이전 종목들의 실제 투자액)
-        const remainingTotal = totalInvestment - accumulatedTotalAmount;
-        // 회당 금액 = 남은 총액 / 기간 (반올림으로 일관성 있게 계산)
-        const perPeriodAmount = Math.round(remainingTotal / dcaPeriods);
-        perPeriodAmounts[index] = perPeriodAmount;
-      } else {
-        // 일반 DCA 항목
-        const perPeriodAmount = Math.round(totalAmountForStock / dcaPeriods);
-        perPeriodAmounts[index] = perPeriodAmount;
-        // 누적: 회당 금액 × 기간 (실제 투자액 기반, 반올림된 회당 금액 사용)
-        accumulatedTotalAmount += Math.round(perPeriodAmount * dcaPeriods);
-      }
-    } else {
-      // 일시불 항목
-      const amount = Math.round(totalAmountForStock);
-      perPeriodAmounts[index] = amount;
-      if (!isLastWeightItem) {
-        accumulatedTotalAmount += amount;
-      } else {
-        // 마지막 일시불 항목: 오차 보정
-        const remainingTotal = totalInvestment - accumulatedTotalAmount;
-        perPeriodAmounts[index] = remainingTotal;
-      }
-    }
-  });
-
-  // Step 3: 최종 결과 반영
-  return portfolio.map((s, index) => {
-    if (perPeriodAmounts[index] !== null) {
-      return { ...s, amount: perPeriodAmounts[index]! };
-    }
-    return s;
+  return portfolio.map((stock, index) => {
+    const periods = stock.investmentType === 'dca' && startDate && endDate
+      ? calculateDcaPeriods(startDate, endDate, stock.dcaFrequency || 'monthly_1') : 1;
+    return { ...stock, amount: Math.floor(cents[index]! / periods) / 100, totalAmount: cents[index]! / 100 };
   });
 }
 
@@ -90,13 +43,17 @@ export function backtestFormReducer(state: BacktestFormState, action: BacktestFo
     case 'SET_PORTFOLIO':
       return {
         ...state,
-        portfolio: action.payload
+        portfolio: state.portfolioInputMode === 'weight'
+          ? recalcAmountsByWeight(action.payload, state.totalInvestment, state.dates.startDate, state.dates.endDate)
+          : action.payload
       };
 
     case 'ADD_STOCK':
       return {
         ...state,
-        portfolio: [...state.portfolio, action.payload]
+        portfolio: state.portfolioInputMode === 'weight'
+          ? recalcAmountsByWeight([...state.portfolio, action.payload], state.totalInvestment, state.dates.startDate, state.dates.endDate)
+          : [...state.portfolio, action.payload]
       };
 
     case 'UPDATE_STOCK': {
@@ -117,7 +74,7 @@ export function backtestFormReducer(state: BacktestFormState, action: BacktestFo
         } else {
           // 금액 기반 모드: amount 직접 수정, weight는 undefined로 초기화
           if (field === 'amount') {
-            return { ...stock, amount: Number(value), weight: undefined };
+            return { ...stock, amount: Number(value), weight: undefined, totalAmount: undefined };
           }
           if (field === 'weight') {
             return { ...stock, weight: Number(value) };
@@ -165,7 +122,7 @@ export function backtestFormReducer(state: BacktestFormState, action: BacktestFo
         );
       } else {
         // 비중→금액: weight를 undefined로 초기화
-        updatedPortfolio = state.portfolio.map((s) => ({ ...s, weight: undefined }));
+        updatedPortfolio = state.portfolio.map((s) => ({ ...s, weight: undefined, totalAmount: undefined }));
       }
       return {
         ...state,
@@ -195,7 +152,9 @@ export function backtestFormReducer(state: BacktestFormState, action: BacktestFo
     case 'REMOVE_STOCK':
       return {
         ...state,
-        portfolio: state.portfolio.filter((_, index) => index !== action.payload)
+        portfolio: state.portfolioInputMode === 'weight'
+          ? recalcAmountsByWeight(state.portfolio.filter((_, index) => index !== action.payload), state.totalInvestment, state.dates.startDate, state.dates.endDate)
+          : state.portfolio.filter((_, index) => index !== action.payload)
       };
 
     case 'SET_START_DATE': {

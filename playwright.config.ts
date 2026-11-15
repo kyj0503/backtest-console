@@ -26,9 +26,13 @@ export default defineConfig({
   },
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5173',
+    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
+      : {},
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    // System Chromium containers do not include Playwright's bundled ffmpeg.
+    video: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ? 'off' : 'retain-on-failure',
     trace: 'retain-on-failure',
   },
   projects: [

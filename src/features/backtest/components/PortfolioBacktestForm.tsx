@@ -56,6 +56,7 @@ const PortfolioBacktestForm: React.FC<PortfolioBacktestFormProps> = ({ onSubmit,
       const portfolioData = state.portfolio.map(stock => {
         return {
           symbol: stock.symbol.toUpperCase(),
+          total_amount: state.portfolioInputMode === 'weight' ? stock.totalAmount : undefined,
           amount: stock.amount,  // 항상 amount를 전송 (비중 모드에서도 reducer가 계산함)
           investment_type: stock.investmentType,
           dca_frequency: stock.dcaFrequency || 'monthly_1',

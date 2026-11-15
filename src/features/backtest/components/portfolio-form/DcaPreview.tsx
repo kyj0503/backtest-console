@@ -19,12 +19,12 @@ export const DcaPreview: React.FC<DcaPreviewProps> = ({ stock, startDate, endDat
 
   if (startDate && endDate) {
     dcaPeriods = calculateDcaPeriods(startDate, endDate, stock.dcaFrequency || 'monthly_1');
-    totalAmount = periodAmount * dcaPeriods;
+    totalAmount = stock.totalAmount ?? periodAmount * dcaPeriods;
   }
 
   return (
     <p className={`${TEXT_STYLES.captionSmall} mt-1`}>
-      {frequencyLabel}: 예정 {dcaPeriods}회, 회당 ${periodAmount.toLocaleString()} (예정 총액 ${totalAmount.toLocaleString()})
+      {frequencyLabel}: 예정 {dcaPeriods}회, 기본 회당 ${periodAmount.toLocaleString()} (총액 ${totalAmount.toLocaleString()}{stock.totalAmount !== undefined ? ", 마지막 회차 잔액 정산" : ""})
     </p>
   );
 };

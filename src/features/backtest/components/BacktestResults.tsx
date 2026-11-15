@@ -74,6 +74,12 @@ const BacktestResults: React.FC<BacktestResultsProps> = ({ data, isPortfolio, sh
 
   return (
     <div ref={resultsRef} className="mx-auto w-full lg:max-w-screen-2xl space-y-4 sm:space-y-6 mt-6 sm:mt-8">
+      {'calculation_assumptions' in data && data.calculation_assumptions?.quantity_unit === 'fractional_adjusted_unit' && (
+        <p className="text-sm text-muted-foreground" role="note">
+          수정주가 기반 소수 단위 모형입니다. 거래 수량은 당시의 실제 주식 수가 아니며, 분할·배당이 반영된 단위입니다.
+          종목별 비중에는 해당 종목의 매수 대기 현금이 포함됩니다. 거래 원장은 USD, 주가 차트는 종목 통화 기준입니다.
+        </p>
+      )}
       {isPortfolio && 'warnings' in data && data.warnings && data.warnings.length > 0 && (
         <WarningBanner warnings={data.warnings} />
       )}

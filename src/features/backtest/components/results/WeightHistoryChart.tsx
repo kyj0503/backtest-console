@@ -16,7 +16,7 @@ interface WeightChartRow {
 
 interface WeightHistoryChartProps {
   weightHistory: WeightHistoryPoint[];
-  portfolioComposition: Array<{ symbol: string }>;
+  portfolioComposition: Array<{ symbol: string; asset_id?: string; asset_type?: 'stock' | 'cash' }>;
   rebalanceHistory?: RebalanceEvent[];
 }
 
@@ -44,17 +44,18 @@ const WeightHistoryChart: React.FC<WeightHistoryChartProps> = memo(({
 
   const symbols = useMemo(() => {
     // portfolioComposition에서 symbol 추출 (중복 제거)
-    return Array.from(new Set(portfolioComposition.map(stock => stock.symbol)));
+    return Array.from(new Set(portfolioComposition.map(stock => stock.asset_id ?? stock.symbol)));
   }, [portfolioComposition]);
 
   // symbol -> 표시 이름 매핑
   const symbolDisplayNames = useMemo(() => {
     const mapping: Record<string, string> = {};
-    symbols.forEach(symbol => {
-      mapping[symbol] = getStockDisplayName(symbol);
+    portfolioComposition.forEach(stock => {
+      mapping[stock.asset_id ?? stock.symbol] = stock.asset_type === 'stock' && stock.symbol === 'CASH'
+        ? 'CASH (주식)' : getStockDisplayName(stock.symbol);
     });
     return mapping;
-  }, [symbols]);
+  }, [portfolioComposition]);
 
   // 차트 데이터 (샘플링은 useChartData에서 처리됨)
   const chartData = useMemo(() => {

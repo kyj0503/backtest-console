@@ -1,0 +1,8 @@
+FROM node:24-alpine
+RUN apk add --no-cache chromium
+WORKDIR /app
+COPY package*.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
+COPY . .
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
+CMD ["npx", "playwright", "test", "e2e/rust-migration.spec.ts"]

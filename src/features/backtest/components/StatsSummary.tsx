@@ -83,10 +83,10 @@ const StatsSummary: React.FC<{ stats: Record<string, unknown> | null | undefined
 
   statItems.push(
     {
-      label: '거래일 수',
+      label: stats.Return_Observation_Days_Per_Year === 365 ? '평가일 수' : '거래일 수',
       value: String(numberValue(stats.Total_Trading_Days, 0)),
       tone: 'neutral',
-      description: '백테스트가 실행된 총 거래일 수',
+      description: stats.Return_Observation_Days_Per_Year === 365 ? '휴장일을 포함한 달력 기준 평가일 수' : '백테스트가 실행된 총 거래일 수',
     },
     {
       label: '총 거래 횟수',
@@ -105,7 +105,7 @@ const StatsSummary: React.FC<{ stats: Record<string, unknown> | null | undefined
           label: '승률 (일 기준)',
           value: formatPercent(winRate),
           tone: mapVariantToTone(getStatVariant(winRate, 'winRate')),
-          description: '전체 거래일 중 수익이 난 날의 비율',
+          description: '전체 평가일 중 수익이 난 날의 비율',
         },
     {
       label: '최대 손실',
@@ -121,7 +121,7 @@ const StatsSummary: React.FC<{ stats: Record<string, unknown> | null | undefined
       tone: mapVariantToTone(
         getStatVariant(numberValue(stats.sharpe_ratio ?? stats.Sharpe_Ratio), 'sharpe'),
       ),
-      description: '일간 수익률 평균 ÷ 표준편차 × √252 · 무위험 수익률 0%',
+      description: `일간 수익률 평균 ÷ 표준편차 × √${numberValue(stats.Return_Observation_Days_Per_Year, 252)} · 무위험 수익률 0%`,
     },
     {
       label: '연간 변동성',
@@ -214,7 +214,7 @@ const StatsSummary: React.FC<{ stats: Record<string, unknown> | null | undefined
       tone: mapVariantToTone(
         getStatVariant(numberValue(stats.alpha_vs_sp500_pct), 'return'),
       ),
-      description: 'S&P 500 지수 대비 초과 수익률',
+      description: '시간가중수익률(TWR)에서 같은 기간 S&P 500 수익률을 뺀 값',
     });
   }
 
