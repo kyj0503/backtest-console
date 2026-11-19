@@ -3,7 +3,7 @@
 # P3-05: node:20.19.0-alpine은 Node 20.19.0 고정 태그로 이미 EOL(2026-04-30)이
 # 지났다. package.json의 engines.node(">=20.0.0")는 22에도 그대로 만족되므로
 # package.json은 건드리지 않았다.
-FROM node:24-alpine AS deps
+FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS deps
 
 WORKDIR /app
 
@@ -73,11 +73,7 @@ COPY . .
 RUN npm run build
 
 # Stage 4: Serve the application with Nginx
-# P3-05: stable-alpine은 부동 태그라 재빌드마다 다른 nginx/Alpine 버전을 받을 수
-# 있다. 이 락은 이 작업 시점에 stable-alpine이 가리키던 것과 동일한 이미지다
-# (다이제스트 sha256:97d490c12ba55b4946b01546d1c3ed324e8d41ab1c9fcb2a616aa470620e5b46로
-# 확인) — 버전을 바꾸지 않고 태그만 고정했다.
-FROM nginx:1.30.6-alpine AS runtime
+FROM nginx:1.30.7-alpine@sha256:bef154735288bc38d99fac41ae63730684bcc661503673a04a0f9bc526ba8598 AS runtime
 
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.prod.conf /etc/nginx/templates/default.conf.template
