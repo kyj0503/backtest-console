@@ -4,8 +4,20 @@ updates:
     target-branch: main
     directory: "/"
     schedule:
-      interval: daily
+      interval: quarterly
     groups:
+      frontend-tests:
+        patterns: ["vitest", "@vitest/*", "@playwright/test", "playwright*", "@testing-library/*", "happy-dom", "msw"]
+        update-types: ["minor", "major"]
+      react-ui:
+        patterns: ["react", "react-dom", "react-router*", "@types/react*", "@radix-ui/*", "lucide-react", "sonner", "recharts", "next-themes"]
+        update-types: ["minor", "major"]
+      typescript-lint:
+        patterns: ["typescript", "@typescript-eslint/*", "eslint*"]
+        update-types: ["minor", "major"]
+      frontend-build:
+        patterns: ["vite", "@vitejs/*", "@types/node", "postcss", "tailwind*", "@tailwindcss/*", "class-variance-authority", "clsx"]
+        update-types: ["minor", "major"]
       package-patches:
         patterns: ["*"]
         update-types: ["patch"]
@@ -13,9 +25,13 @@ updates:
     target-branch: main
     directory: "/"
     schedule:
-      interval: daily
+      interval: quarterly
   - package-ecosystem: "github-actions"
     target-branch: main
     directory: "/"
     schedule:
-      interval: daily
+      interval: quarterly
+    groups:
+      ci-actions:
+        patterns: ["*"]
+        update-types: ["minor", "major"]
