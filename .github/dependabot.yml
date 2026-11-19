@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    target-branch: main
+    directory: "/"
+    schedule:
+      interval: daily
+    groups:
+      package-patches:
+        patterns: ["*"]
+        update-types: ["patch"]
+  - package-ecosystem: "docker"
+    target-branch: main
+    directory: "/"
+    schedule:
+      interval: daily
+  - package-ecosystem: "github-actions"
+    target-branch: main
+    directory: "/"
+    schedule:
+      interval: daily
