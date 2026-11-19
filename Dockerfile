@@ -3,7 +3,7 @@
 # P3-05: node:20.19.0-alpine은 Node 20.19.0 고정 태그로 이미 EOL(2026-04-30)이
 # 지났다. package.json의 engines.node(">=20.0.0")는 22에도 그대로 만족되므로
 # package.json은 건드리지 않았다.
-FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS deps
+FROM node:26-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS deps
 
 WORKDIR /app
 
