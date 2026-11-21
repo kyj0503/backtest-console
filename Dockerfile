@@ -73,7 +73,10 @@ COPY . .
 RUN npm run build
 
 # Stage 4: Serve the application with Nginx
-FROM nginx:1.30.7-alpine@sha256:bef154735288bc38d99fac41ae63730684bcc661503673a04a0f9bc526ba8598 AS runtime
+FROM nginx:1.30.7-alpine@sha256:caf4e1e032a20f9c3c5e28fc7f25ffd768ad8677b4975c54193075997b3a97e3 AS gateway
+RUN apk add --no-cache --upgrade 'libxml2>=2.13.9-r3'
+
+FROM gateway AS runtime
 
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.prod.conf /etc/nginx/templates/default.conf.template

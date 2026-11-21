@@ -33,7 +33,7 @@ jobs:
           EVENT: ${{ github.event_name }}
         run: |
           options=()
-          if [[ $EVENT == schedule ]]; then options+=(--no-cache-filter runtime); fi
+          if [[ $EVENT == schedule ]]; then options+=(--no-cache-filter gateway,runtime); fi
           docker buildx build --load --pull "${options[@]}" --target runtime -t oci-candidate:test .
       - uses: ./.github/actions/scan-image
         with:
@@ -78,7 +78,7 @@ jobs:
             VITE_TURNSTILE_SITE_KEY=${{ vars.VITE_TURNSTILE_SITE_KEY }}
           platforms: linux/arm64
           pull: true
-          no-cache-filters: ${{ github.event_name == 'schedule' && 'runtime' || '' }}
+          no-cache-filters: ${{ github.event_name == 'schedule' && 'gateway,runtime' || '' }}
           push: true
           tags: |
             ghcr.io/kyj0503/backtest-console:${{ github.ref_name }}
