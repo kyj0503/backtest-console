@@ -1,0 +1,69 @@
+name: Build patched host Nginx
+on:
+  pull_request:
+    branches: [main]
+    paths: ['Dockerfile', '.github/workflows/gateway-image.yml']
+  push:
+    branches: [main]
+    paths: ['Dockerfile', '.github/workflows/gateway-image.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        include:
+          - {runner: ubuntu-24.04, arch: amd64}
+          - {runner: ubuntu-24.04-arm, arch: arm64}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - run: |
+          docker build --pull --target gateway -t gateway:test .
+          docker run --rm gateway:test nginx -t
+      - uses: ./.github/actions/scan-image
+        with:
+          image: gateway:test
+          platform: linux/${{ matrix.arch }}
+          report: host-nginx-${{ matrix.arch }}
+
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: verify
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - id: tag
+        run: |
+          version=$(sed -nE 's|^FROM nginx:([0-9]+\.[0-9]+\.[0-9]+)-alpine@sha256:[a-f0-9]{64} AS gateway$|\1|p' Dockerfile)
+          [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          echo "image=ghcr.io/kyj0503/backtest-console:$version-gateway-alpine" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc
+        with:
+          context: .
+          target: gateway
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tag.outputs.image }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
